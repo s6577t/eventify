@@ -102,7 +102,7 @@ function Events(source) {
    
    return {
      define: function () {
-       toArray(arguments).forEach(function (eventName) {
+       Array.toArray(arguments).forEach(function (eventName) {
          installEvent(source, eventName);
        });
        return source;
