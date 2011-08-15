@@ -93,3 +93,22 @@ describe('when and event is throttled', function () {
     });    
   });
 });
+
+describe('when a handler is unbound', function () {
+  it('is not fired', function () {
+    var obj = {};
+    Events(obj).define('onDo');
+
+    obj.handler = function () {};
+
+    spyOn(obj, 'handler');
+
+    obj.onDo(obj.handler);
+
+    obj.onDo().unbind(obj.handler);
+
+    obj.onDo().emit();
+
+    expect(obj.handler).not.toHaveBeenCalled();
+  })
+});
