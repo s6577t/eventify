@@ -28,6 +28,20 @@ obj.onClick().unbind(event_handler_function)
 obj.onUpdate().unbind(event_handler_function)
 obj.onHide().unbind(event_handler_function)
 (obj.<eventName>().unbind(<handler>))
+
+can also register a delegate:
+
+var delegate = {
+  onSomeEvent: function (arg0) {
+    console.info(arg0)
+  }
+}
+
+obj.onSomeEvent(delegate);
+
+obj.onSomeEvent().emit("MEOW");
+=> "MEOW"
+
 */
 
 function Events(source) {
@@ -53,7 +67,11 @@ function Events(source) {
           var runListeners = function () {
             eventManager.lastEmitTime = time_now;
             listeners.forEach(function(listener){
-                listener.apply(self, eventManager.eventArguments);
+              if (typeof listener === 'function') {
+                 listener.apply(self, eventManager.eventArguments);
+              } else if ((typeof listener === 'object') && (typeof listener[eventName] === 'function')) {
+                listener[eventName].apply(self, eventManager.eventArguments);
+              }
             });
           };
           
@@ -85,6 +103,9 @@ function Events(source) {
           minimumInterval = Math.max(minimumInterval, 1);
           eventManager.minimumEmitInterval = minimumInterval;
           return self;
+        },
+        listeners: function () {
+          return listeners;
         }
       };
       
