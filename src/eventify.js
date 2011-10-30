@@ -9,7 +9,7 @@ Example:
 var obj = new Object();
 
 // install three events emitters on object
-Events(obj).define('onClick', 'onUpdate', 'onHide');
+eventify(obj).define('onClick', 'onUpdate', 'onHide');
 
 // register some listeners..
 obj.onClick(event_handler_function);
@@ -20,7 +20,7 @@ obj.onHide(event_handler_function);
 obj.onClick.emit();
 obj.onHide.emit();
 
-obj.onUpdate().emit(new_value_arg); 
+obj.onUpdate().emit(new_value_arg);
 // n.b.: new_value_arg MUST NOT be a function otherwise it will be treated as an event handler
 
 // unbind the events...
@@ -44,13 +44,13 @@ obj.onSomeEvent().emit("MEOW");
 
 */
 
-function Events(source) {
-   
+function eventify(source) {
+
    // register a new event for the source
    function installEvent (obj, eventName) {
       var listeners = [];
       var self = null;
-      
+
       var eventManager = {
         unbind: function (listenerToRemove) {
           listeners = listeners.filter(function(registeredListener){
@@ -58,8 +58,12 @@ function Events(source) {
           });
           return self;
         },
+        unbindAll: function (listenerToRemove) {
+          listeners = [];
+          return self;
+        },
         emit: function () {
-          
+
           var time_now = (new Date).getTime();
           var lastEmitTime = parseInt(eventManager.lastEmitTime) || 0;
           var minimumEmitInterval = parseInt(eventManager.minimumEmitInterval) || 0;
@@ -74,24 +78,24 @@ function Events(source) {
               }
             });
           };
-          
+
           var clearTimer = function () {
             clearTimeout(eventManager.intervalTimeoutId);
             eventManager.intervalTimeoutId = null;
           };
-          
+
           var setTimer = function () {
             if (!eventManager.intervalTimeoutId) {
               eventManager.intervalTimeoutId = setTimeout(function () {
                 clearTimer();
                 runListeners();
-              }, minimumEmitInterval); 
+              }, minimumEmitInterval);
             }
           };
-          
+
           if (lastEmitTime < (time_now - minimumEmitInterval)) {
              clearTimer();
-             runListeners();            
+             runListeners();
           } else {
              setTimer();
           }
@@ -108,19 +112,21 @@ function Events(source) {
           return listeners;
         }
       };
-      
+
       // assign the event listener registration function to the specified name
       obj[eventName] = function(listener) {
         self = this;
         if (typeof listener === 'function') {
           listeners.push(listener);
           return this;
-        } 
-        
-        return eventManager;      
+        }
+
+        return eventManager;
       };
-   } 
-   
+
+      obj[eventName].__eventifyEvent = true;
+   }
+
    return {
      define: function () {
        Array.toArray(arguments).forEach(function (eventName) {
@@ -129,5 +135,16 @@ function Events(source) {
        return source;
      }
    };
+}
+
+function deventify (obj) {
+
+  for (var m in obj) {
+    if (obj[m] && obj[m].__eventifyEvent) {
+      obj[m]().unbindAll();
+    }
+  }
+
+  return obj;
 }
 
