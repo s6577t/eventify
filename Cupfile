@@ -1,12 +1,9 @@
-# This file describes the javascript project
-# see: https://github.com/sjltaylor/cup
-Cup.define do |cup|
+{
+  name: 'eventify',
+  version: '0.1.2',
+  licence: 'licence.txt',
 
-  name 'eventify'
-  version '0.1.2'
-  licence 'licence.txt'
-
-  javascripts do
-    spec 'env/jasmine.js', 'env/jasmine-html.js', :*
-  end
-end
+  javascripts: {
+    spec: ['env/jasmine.js', 'env/jasmine-html.js', '*']
+  }
+}
