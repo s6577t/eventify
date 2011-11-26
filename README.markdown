@@ -31,7 +31,7 @@ A Javascript events library
 
 This syntax is preferred over the jQuery style `object.onThat(123, 'some text', ['some', 'things']);` because the intent of the statement is explicit.
 
-## Listening to an event
+## Listening To An Event
 
 Also known as binding.
     
@@ -42,6 +42,7 @@ Also known as binding.
     });
 
 * returns object
+* event listeners run in the context of object
 
 ## Throttling An Event
 
@@ -53,6 +54,8 @@ Call listeners no more than once every N milliseconds
 
 * if no intervalBetweenEventEmissionsInMilliseconds is specified, the default is 10
 * returns object
+
+To remove the throttle from an event: `object.onThis().throttle(null)`
 
 ### Behaviour
 
@@ -73,16 +76,31 @@ Scenario:
 * `1000` is written to the console a second later
 
 ## Listening To An Event __Once__
-TODO
+
 The event listener will only be called the next time the event is emitted.
 
     object.onThis().once(function () {
       // only gets called on the next event omission
     });
 
-## One-time events
-TODO
-Turn this event into a one-time event which behaves like a normal event until it is emitted, after which new listeners are called **immediately**
+## One-time Event Queueing
+
+Turns the event into a one-time event which behaves like a normal event until it is emitted, after which new listeners are called **immediately**
+  
+    object.onThis().queue();
+    // => object
+    
+    object.onThis(function () {});
+
+    // function will be called when the event is emitted
+    
+    object.onThis().emit();
+    
+    object.onThis(function () {});
+    // will be called immediately with the arguments of the first call
+
+* returns object
+* this operation is idempotent and irreversible
 
 ## Unbinding from and event
 

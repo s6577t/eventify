@@ -1,9 +1,0 @@
-> writing read and refactoring specs as I go... finish this and then 
-
-// onWhatever().once(listener)
-// obj.eventifyEvents();
-// onWhatever().oneTimeEventQueue();
-    -> register a handler
-    -> handlers are fired as normal
-    -> when the event has fired all handlers are removed
-    -> any handlers are immediately called back there after

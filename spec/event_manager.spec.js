@@ -7,6 +7,13 @@ describe("event manager", function() {
     eventify(object).define('onSomeEvent');
   });
 
+  describe("bind()", function() {
+
+    it("should return object", function() {
+      expect(object.onSomeEvent().bind(function(){})).toBe(object);
+    });
+  });
+
   describe('emit()', function () {
 
     it('calls the listeners', function () {
@@ -36,8 +43,23 @@ describe("event manager", function() {
       expect(passedArg).toEqual(arg);
     });
 
-    it("should return the object which emitted the event", function() {
+    it("should return object", function() {
       expect(object.onSomeEvent().emit()).toBe(object);
+    });
+
+    it('should call listeners in their original context', function () {
+
+      var context = null;
+      var eventHandler = {
+        onSomeEvent: function () {
+          context = this;
+        }
+      };
+
+      object.onSomeEvent(eventHandler.onSomeEvent);
+      object.onSomeEvent().emit();
+
+      expect(context).toBe(object);
     });
   });
 
@@ -74,7 +96,26 @@ describe("event manager", function() {
 
     it("defaults to 10ms", function() {
       object.onSomeEvent().throttle();
-      expect(object.onSomeEvent().minimumEmitInterval).toBe(10);
+      expect(object.onSomeEvent()._minimumEmitInterval).toBe(10);
+    });
+
+    it("should return object when event emission is throttled", function() {
+      object.onSomeEvent().throttle(100);
+      object.onSomeEvent(function () {});
+
+      object.onSomeEvent().emit();
+      var rtn = object.onSomeEvent().emit();
+
+      expect(rtn).toBe(object);
+    });
+
+    it("should remove the throttle when called with null", function() {
+
+      object.onSomeEvent().throttle(100);
+      expect(object.onSomeEvent()._minimumEmitInterval).toEqual(100);
+
+      object.onSomeEvent().throttle(null);
+      expect(object.onSomeEvent()._minimumEmitInterval).toBeUndefined();
     });
   });
 
@@ -124,8 +165,18 @@ describe("event manager", function() {
     });
   });
 
-  xdescribe("once() events", function() {
-    it("should only fire once events... once!", function() {
+  describe("listeners()", function() {
+    it("should return an array of the event listeners", function() {
+
+      var listener = function () {};
+      object.onSomeEvent(listener);
+
+      expect(object.onSomeEvent().listeners()).toEqual([listener]);
+    });
+  });
+
+  describe("once(listener)", function() {
+    it("the listener should only be called once", function() {
       var obj = {};
       eventify(obj).define('onEvent');
 
@@ -139,6 +190,63 @@ describe("event manager", function() {
       obj.onEvent().emit();
 
       expect(count).toEqual(1);
+    });
+  });
+
+  describe("queue()", function() {
+
+    beforeEach(function () {
+      object.onSomeEvent().queue();
+    })
+
+    it("should return object", function() {
+      expect(object.onSomeEvent().queue()).toBe(object);
+    });
+
+    it("should call event handlers in the normal way the first time the event is emitted", function() {
+      var called = false;
+
+      object.onSomeEvent(function () { called = true});
+
+      expect(called).toEqual(false);
+
+      object.onSomeEvent().emit();
+
+      expect(called).toEqual(true);
+    });
+
+    it("should call back immediately after the event has been emitted", function() {
+      var called = false;
+      var args;
+
+      object.onSomeEvent().emit(1,2,3);
+
+      object.onSomeEvent(function () { args = arguments; called = true });
+
+      expect(called).toEqual(true);
+      expect(args).toEqual([1,2,3]);
+    });
+
+    describe("when the event is emitted more than once", function() {
+
+      it("should return object", function() {
+        object.onSomeEvent().emit()
+        // call emit again, it should return object if the event has occured
+        expect(object.onSomeEvent().emit()).toBe(object);
+      });
+
+      it("should not call listeners more than once", function() {
+        var calls = 0;
+
+        object.onSomeEvent(function () {
+          calls++;
+        });
+
+        object.onSomeEvent().emit();
+        object.onSomeEvent().emit();
+
+        expect(calls).toBe(1);
+      });
     });
   });
 });
