@@ -1,8 +1,6 @@
 # Eventify
 
-SIZE OF MINIFIED FILE AND SLOC GOES HERE
-
-A Javascript events library
+A 3k Javascript events library
 
 ## Principles
 
