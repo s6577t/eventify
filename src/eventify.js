@@ -16,9 +16,9 @@ function eventify(source) {
 
    return {
      define: function () {
-       Array.toArray(arguments).forEach(function (eventName) {
-         installEvent(eventName);
-       });
+       for (var i = 0; i < arguments.length; i++) {
+         installEvent(arguments[i]);
+       }       
        return source;
      }
    };
