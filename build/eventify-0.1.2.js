@@ -17,78 +17,42 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-*/;/*
+*/;function deventify (object) {
 
-parameters: an arbitrary number of arguments, each of which is a valid function name.
-
-an object with the listen events install is returned.
-
-Example:
-
-var obj = new Object();
-
-// install three events emitters on object
-eventify(obj).define('onClick', 'onUpdate', 'onHide');
-
-// register some listeners..
-obj.onClick(event_handler_function);
-obj.onUpdate(event_handler_function);
-obj.onHide(event_handler_function);
-
-// emit the events..
-obj.onClick.emit();
-obj.onHide.emit();
-
-obj.onUpdate().emit(new_value_arg);
-// n.b.: new_value_arg MUST NOT be a function otherwise it will be treated as an event handler
-
-// unbind the events...
-obj.onClick().unbind(event_handler_function)
-obj.onUpdate().unbind(event_handler_function)
-obj.onHide().unbind(event_handler_function)
-(obj.<eventName>().unbind(<handler>))
-
-can also register a delegate:
-
-var delegate = {
-  onSomeEvent: function (arg0) {
-    console.info(arg0)
+  for (var member in object) {
+    if (object[member] && object[member].__eventifyEvent) {
+      object[member]().unbindAll();
+    }
   }
-}
 
-obj.onSomeEvent(delegate);
-
-obj.onSomeEvent().emit("MEOW");
-=> "MEOW"
-
-*/
-
-function eventify(source) {
+  return object;
+};function eventify(source) {
 
    // register a new event for the source
    function installEvent (obj, eventName) {
       var listeners = [];
-      var self = null;
 
       var eventManager = {
-        unbind: function (listenerToRemove) {
+        self: null
+        , unbind: function (listenerToRemove) {
           listeners = listeners.filter(function(registeredListener){
             return registeredListener != listenerToRemove;
           });
-          return self;
-        },
-        unbindAll: function (listenerToRemove) {
+          return this.self;
+        }
+        , unbindAll: function (listenerToRemove) {
           listeners = [];
-          return self;
-        },
-        emit: function () {
+          return this.self;
+        }
+        , emit: function () {
 
-          var time_now = (new Date).getTime();
-          var lastEmitTime = parseInt(eventManager.lastEmitTime) || 0;
-          var minimumEmitInterval = parseInt(eventManager.minimumEmitInterval) || 0;
+          var timeNow = new Date().getTime();
+          var lastEmitTime = parseInt(eventManager.lastEmitTime, 10) || 0;
+          var minimumEmitInterval = parseInt(eventManager.minimumEmitInterval, 10) || 0;
           eventManager.eventArguments = arguments;
+
           var runListeners = function () {
-            eventManager.lastEmitTime = time_now;
+            eventManager.lastEmitTime = timeNow;
             listeners.forEach(function(listener){
               if (typeof listener === 'function') {
                  listener.apply(self, eventManager.eventArguments);
@@ -112,29 +76,30 @@ function eventify(source) {
             }
           };
 
-          if (lastEmitTime < (time_now - minimumEmitInterval)) {
+          if (lastEmitTime < (timeNow - minimumEmitInterval)) {
              clearTimer();
              runListeners();
           } else {
              setTimer();
           }
 
-          return self;
-        },
-        throttle: function (minimumInterval) {
-          minimumInterval = (typeof minimumInterval === 'number') ? minimumInterval : 1;
+          return this.self;
+        }
+        , throttle: function (minimumInterval) {
+          minimumInterval = (typeof minimumInterval === 'number') ? minimumInterval : 10;
           minimumInterval = Math.max(minimumInterval, 1);
           eventManager.minimumEmitInterval = minimumInterval;
-          return self;
-        },
-        listeners: function () {
+          return this.self;
+        }
+        , listeners: function () {
           return listeners;
         }
       };
 
       // assign the event listener registration function to the specified name
       obj[eventName] = function(listener) {
-        self = this;
+        eventManager.self = this;
+
         if (typeof listener === 'function') {
           listeners.push(listener);
           return this;
@@ -154,17 +119,6 @@ function eventify(source) {
        return source;
      }
    };
-}
-
-function deventify (obj) {
-
-  for (var m in obj) {
-    if (obj[m] && obj[m].__eventifyEvent) {
-      obj[m]().unbindAll();
-    }
-  }
-
-  return obj;
 }
 
 ;
