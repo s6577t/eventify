@@ -25,7 +25,7 @@ A 3k Javascript events library
     object.onThat().emit(123, 'some text', ['some', 'things']);
 
 * arguments are passed on to each listener
-* returns object
+* returns true if the event is emitted. The event may be throttled, or could be a queue in which case the event will not be emitted (see below).
 
 This syntax is preferred over the jQuery style `object.onThat(123, 'some text', ['some', 'things']);` because the intent of the statement is explicit.
 
@@ -52,6 +52,7 @@ Call listeners no more than once every N milliseconds
 
 * if no intervalBetweenEventEmissionsInMilliseconds is specified, the default is 10
 * returns object
+* `object.onThis().emit()` returns false if the event emissions is throttled
 
 To remove the throttle from an event: `object.onThis().throttle(null)`
 
@@ -99,6 +100,8 @@ Turns the event into a one-time event which behaves like a normal event until it
 
 * returns object
 * this operation is idempotent and irreversible
+* `object.onThis().emit()` returns false if the event has already been emitted
+
 
 ## Unbinding from and event
 

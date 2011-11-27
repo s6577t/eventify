@@ -43,8 +43,20 @@ describe("event manager", function() {
       expect(passedArg).toEqual(arg);
     });
 
-    it("should return object", function() {
-      expect(object.onSomeEvent().emit()).toBe(object);
+    it("should return true if the event is emitted", function() {
+      expect(object.onSomeEvent().emit()).toBe(true);
+    });
+    
+    it("should return false if the event is a queue and has already been emitted", function() {
+      object.onSomeEvent().queue();
+      object.onSomeEvent().emit();
+      expect(object.onSomeEvent().emit()).toBe(false);
+    });
+    
+    it("should return false if the event emit is throttled", function() {
+      object.onSomeEvent().throttle(100)
+      object.onSomeEvent().emit();
+      expect(object.onSomeEvent().emit()).toBe(false);
     });
 
     it('should call listeners in their original context', function () {
@@ -97,16 +109,6 @@ describe("event manager", function() {
     it("defaults to 10ms", function() {
       object.onSomeEvent().throttle();
       expect(object.onSomeEvent()._minimumEmitInterval).toBe(10);
-    });
-
-    it("should return object when event emission is throttled", function() {
-      object.onSomeEvent().throttle(100);
-      object.onSomeEvent(function () {});
-
-      object.onSomeEvent().emit();
-      var rtn = object.onSomeEvent().emit();
-
-      expect(rtn).toBe(object);
     });
 
     it("should remove the throttle when called with null", function() {
@@ -176,7 +178,7 @@ describe("event manager", function() {
   });
 
   describe("once(listener)", function() {
-    it("the listener should only be called once", function() {
+    it("should only call the listener once", function() {
       var obj = {};
       eventify(obj).define('onEvent');
 
@@ -228,12 +230,6 @@ describe("event manager", function() {
     });
 
     describe("when the event is emitted more than once", function() {
-
-      it("should return object", function() {
-        object.onSomeEvent().emit()
-        // call emit again, it should return object if the event has occured
-        expect(object.onSomeEvent().emit()).toBe(object);
-      });
 
       it("should not call listeners more than once", function() {
         var calls = 0;
