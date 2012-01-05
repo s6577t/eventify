@@ -1,4 +1,60 @@
-eventSource.EventManager = (function () {
+/*  Copyright (C) 2011 by sjltaylor
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicence, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+*/;function events(source) {
+
+   // register a new event for the source
+   function installEvent (eventName) {
+
+      var eventManager = new events.EventManager(source, eventName);
+
+      // assign the event listener registration function to the specified name
+      source[eventName] = function(listener) {
+        if (listener) return eventManager.bind(listener);
+        return eventManager;
+      };
+
+      source[eventName].__eventsEvent = true;
+   }
+
+   return {
+     define: function () {
+       for (var i = 0; i < arguments.length; i++) {
+         installEvent(arguments[i]);
+       }       
+       return source;
+     }
+   };
+}
+
+events.remove = function (object) {
+
+  for (var member in object) {
+    if (object[member] && object[member].__eventsEvent) {
+      object[member]().unbindAll();
+    }
+  }
+
+  return object;
+}
+
+;events.EventManager = (function () {
 
   function callEventListeners (emitTime, args) {
     var self = this;
@@ -42,8 +98,7 @@ eventSource.EventManager = (function () {
         }
         self._listeners.push(listener);
       }
-
-      return new eventSource.EventSubscription(this, listener);
+      return self.source;
     }
   , unbind: function (listenerToRemove) {
       this._listeners = this._listeners.filter(function(registeredListener){
@@ -130,4 +185,4 @@ eventSource.EventManager = (function () {
   };
 
   return EventManager;
-})()
+})();

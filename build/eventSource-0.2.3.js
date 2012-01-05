@@ -17,12 +17,12 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-*/;function eventify(source) {
+*/;function eventSource(source) {
 
    // register a new event for the source
    function installEvent (eventName) {
 
-      var eventManager = new eventify.EventManager(source, eventName);
+      var eventManager = new eventSource.EventManager(source, eventName);
 
       // assign the event listener registration function to the specified name
       source[eventName] = function(listener) {
@@ -30,29 +30,40 @@
         return eventManager;
       };
 
-      source[eventName].__eventifyEvent = true;
+      source[eventName].__eventSourceEvent = true;
    }
 
    return {
-     define: function () {
-       for (var i = 0; i < arguments.length; i++) {
-         installEvent(arguments[i]);
-       }       
-       return source;
+     define: function (eventName, options) {
+       options = options || {};
+
+       installEvent(eventName);
+
+       if (options.oneTimeEvent) {
+         source[eventName]().oneTimeEvent();
+       }
+
+       if (options.emitInterval) {
+         source[eventName]().emitInterval(options.emitInterval);
+       }
+
+       return this;
      }
    };
 }
 
-;function deventify (object) {
+eventSource.remove = function (object) {
 
   for (var member in object) {
-    if (object[member] && object[member].__eventifyEvent) {
+    if (object[member] && object[member].__eventSourceEvent) {
       object[member]().unbindAll();
     }
   }
 
   return object;
-};eventify.EventManager = (function () {
+}
+
+;eventSource.EventManager = (function () {
 
   function callEventListeners (emitTime, args) {
     var self = this;
@@ -74,7 +85,7 @@
       listener.apply(self.source, args);
     }
 
-    if (self.__queue) self.unbindAll();
+    if (self._oneTimeEvent) self.unbindAll();
   }
 
   function EventManager (source, eventName) {
@@ -86,52 +97,55 @@
   EventManager.prototype = {
     bind: function (listener) {
       var self = this;
-      
+
       if (typeof listener === 'function') {
-        if (self.__queue && !self.__queueAvailable) {
-          listener.apply(self.source, self._queueEmitArgs);
+        if (self._oneTimeEvent && self._oneTimeEventPassed) {
+          // call back on the next tick
+          setTimeout(function () {
+            listener.apply(self.source, self._oneTimeEventEmitArgs);
+          }, 0);
         }
         self._listeners.push(listener);
       }
-      return self.source;
-    }
-    , unbind: function (listenerToRemove) {
 
+      return new eventSource.EventSubscription(this, listener);
+    }
+  , unbind: function (listenerToRemove) {
       this._listeners = this._listeners.filter(function(registeredListener){
         return registeredListener != listenerToRemove;
       });
 
       return this.source;
     }
-    , unbindAll: function (listenerToRemove) {
+  , unbindAll: function (listenerToRemove) {
       this._listeners = [];
       return this.source;
     }
-    , emit: function () {
+  , emit: function () {
 
       var emitTime  = new Date().getTime()
         , source    = this.source
         , self      = this
-        , throttled = !!this._minimumEmitInterval;
+        , throttled = !!this._emitInterval;
 
-      if (this.__queue) {
-        if (this.__queueAvailable) {
-          self._queueEmitArgs = arguments;
-          this.__queueAvailable = false;
-        } else {
+      if (self._oneTimeEvent) {
+        if (self._oneTimeEventPassed) {
           return false;
+        } else {
+          self._oneTimeEventEmitArgs = arguments;
+          self._oneTimeEventPassed = true;
         }
       }
 
       if (throttled) {
 
-        var lastEmitTime        = this._lastEmitTime || 0
-          , minimumEmitInterval = this._minimumEmitInterval
+        var lastEmitTime        = self._lastEmitTime || 0
+          , minimumEmitInterval = self._emitInterval
           , intervalElapsed     = lastEmitTime < (emitTime - minimumEmitInterval);
 
         if (!intervalElapsed) {
 
-          // throttle the emission, setting a timer for to call with the most recetn arguments when the interval elapses
+          // throttle the emission, set a timer which when triggered emits with the most recent arguments
 
           // stash the most recent arguments for when the interval elapses
           self._stashedEmitArgs = arguments;
@@ -151,32 +165,55 @@
 
       return true;
     }
-    , throttle: function (minimumInterval) {
+  , emitInterval: function (minimumInterval) {
 
       if (minimumInterval === null) {
-        delete this._minimumEmitInterval;
+        delete this._emitInterval;
+      } else if (typeof minimumInterval !== 'number') {
+        return this._emitInterval;
       } else {
         minimumInterval = (typeof minimumInterval === 'number') ? minimumInterval : 10;
         minimumInterval = Math.max(minimumInterval, 1);
 
-        this._minimumEmitInterval = minimumInterval;
+        this._emitInterval = minimumInterval;
       }
 
       return this.source;
     }
-    , listeners: function () {
+  , listeners: function () {
       return this._listeners;
     }
-    , once: function (listener) {
+  , once: function (listener) {
       listener.__onceListener = true;
       return this.bind(listener);
     }
-    , queue: function () {
-      this.__queue          = true;
-      this.__queueAvailable = true;
+  , oneTimeEvent: function () {
+      this._oneTimeEvent          = true;
+      this._oneTimeEventPassed = false;
       return this.source;
     }
   };
 
   return EventManager;
-})();
+})();eventSource.EventSubscription = (function () {
+
+  function EventSubscription (sourceEventManager, listener) {
+    this.sourceEventManager = sourceEventManager;
+    this.listener           = listener;
+  }
+
+  EventSubscription.prototype = {
+    cancel: function () {
+      var listener = this.listener;
+      this.sourceEventManager.unbind(listener);
+      delete this.listener;
+      delete this.sourceEventManager;
+      return listener;
+    }
+  , isActive: function () {
+      return !!(this.sourceEventManager && this.listener);
+    }
+  }
+
+  return EventSubscription;
+})();;

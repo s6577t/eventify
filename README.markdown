@@ -1,18 +1,18 @@
-# Eventify
+# event-source
 
-A 3k Javascript events library
+A 3.5k Javascript events library with zero dependencies.
 
 ## Principles
 
 * Event declaration and emission should be explicit
 * Registering event listeners for events that an object does not emit should fail fast
-* Evented programming is essential for Web UIs; why not have an appropriately capable event library
+* Evented programming is essential to javascript; why not have an suitably capable events library
 
 ## Declaring Events On An Object
 
     var object = {};
     
-    eventify(object).define(
+    eventSource(object).define(
       'onThis',
       'onThat',
       'onTheOther
@@ -25,7 +25,7 @@ A 3k Javascript events library
     object.onThat().emit(123, 'some text', ['some', 'things']);
 
 * arguments are passed on to each listener
-* returns true if the event is emitted. The event may be throttled, or could be a queue in which case the event will not be emitted (see below).
+* returns true if the event is emitted. The event may be throttled, or could be a one time event in which case the event will not be emitted (see below).
 
 This syntax is preferred over the jQuery style `object.onThat(123, 'some text', ['some', 'things']);` because the intent of the statement is explicit.
 
@@ -48,13 +48,13 @@ Call listeners no more than once every N milliseconds
     
     var intervalBetweenEventEmissionsInMilliseconds = 200;
     
-    object.onThis().throttle(intervalBetweenEventEmissionsInMilliseconds);
+    object.onThis().emitInterval(intervalBetweenEventEmissionsInMilliseconds);
 
-* if no intervalBetweenEventEmissionsInMilliseconds is specified, the default is 10
+* if no intervalBetweenEventEmissionsInMilliseconds returns the emit interval
 * returns object
 * `object.onThis().emit()` returns false if the event emissions is throttled
 
-To remove the throttle from an event: `object.onThis().throttle(null)`
+To remove the   emitInterval from an event: `object.onThis().  emitInterval(null)`
 
 ### Behaviour
 
@@ -62,7 +62,7 @@ The event behaves as a normal event for the first emission. Each successive emis
 
 Scenario:
 
-    object.onThis().throttle(1000);
+    object.onThis().  emitInterval(1000);
     object.onThis(function (i) {
       console.info(i);
     })
@@ -82,11 +82,11 @@ The event listener will only be called the next time the event is emitted.
       // only gets called on the next event omission
     });
 
-## One-time Event Queueing
+## One-Time Events
 
-Turns the event into a one-time event which behaves like a normal event until it is emitted, after which new listeners are called **immediately**
+Turns the event into a one-time event which behaves like a normal event until it is emitted, after which new listeners are called **on the next tick of the event machine** (after the current call stack has resolved).
   
-    object.onThis().queue();
+    object.onThis().onTimeEvent();
     // => object
     
     object.onThis(function () {});
@@ -117,9 +117,9 @@ Turns the event into a one-time event which behaves like a normal event until it
 * no event listeners will be called thereafter
 * returns object
 
-## `deventify()`
+## `eventSource.remove()`
 
-    deventify(object)
+    eventSource.remove(object)
 
 * removes all event listeners from all events but leaves the events in place. To remove and event from an object: `delete object.onSomeEvent;`
 * returns object
@@ -127,3 +127,7 @@ Turns the event into a one-time event which behaves like a normal event until it
 ## Limitations
 
 * No guarantees are made about the order in which event listeners are called.
+
+## Acknowledgements
+
+Mark Evans

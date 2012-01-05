@@ -1,0 +1,53 @@
+obj = {}
+
+eventSource(obj).define('onSomeEvent')
+
+eventSource.onSomeEvent().withInterval(20, function () {
+  // behaves like
+  // obj.onSomeEvent().throttle(20)
+  // obj.onSomeEvent(function () {})
+});
+
+
+
+
+DOC:
+this is the event source. important because and event should always pass it's source
+
+
+-> object.onSomeEvent().withInterval(N, listener);
+ -> remove throttle() from define() and manager
+ -> refactor throttling code
+
+
+-> eventSource(obj).define(...) ... ; obj.eventNames() -> [...]
+
+implemenation good, rename to avoid nodejs events naming collision
+
+> oneTimeEventSpecs dont pass now that it calls back on next tick.
+> update the readme (oneTimeEvent, called on next tick after first)
+> update version to 0.3.0
+
+
+var eventSubscription = object.onSomeEvent(function () {
+
+});
+
+var eventSubscription = object.onSomeEvent().once(function () {
+
+});
+
+var eventSubscription = object.onSomeEvent().withInterval(N, function () {
+
+});
+
+eventSubscription.isActive();
+eventSubscription.cancel();
+
+var subscriptions = object.onSomeEvent().subscriptions();
+subscriptions.cancelAll();
+
+events(this).define('name', options).define().define()
+options = {
+  emitInterval: ...
+}
