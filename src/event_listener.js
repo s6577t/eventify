@@ -2,27 +2,27 @@ eventify.EventListener = (function () {
 
   function EventListener (options) {
 
-    this.listener        = options.listener;
-    this.emitInterval    = options.emitInterval;
-    this.hasEmitInterval = typeof this.emitInterval === 'number';
-    this._callCount      = 0;
+    this.listener         = options.listener;
+    this._callInterval    = options.callInterval;
+    this._hasEmitInterval = typeof this._callInterval === 'number';
+    this._callCount       = 0;
 
     if (typeof options.maxCallCount === 'number') {
-      this.hasMaxCallCount = true;
-      this.maxCallCount    = options.maxCallCount;
+      this._hasMaxCallCount = true;
+      this._maxCallCount    = options.maxCallCount;
     }
   }
 
   EventListener.prototype = {
     _call: function (time, source, args) {
-      if (!this.hasMaxCallCount || (this.hasMaxCallCount && (this._callCount < this.maxCallCount))) {
+      if (!this._hasMaxCallCount || (this._hasMaxCallCount && (this._callCount < this.maxCallCount()))) {
         this._lastCallTime = time;
         this._callCount++;
         return this.listener.apply(source, args);
       }
     }
   , hasExpired: function () {
-      return this.hasMaxCallCount && (this._callCount >= this.maxCallCount);
+      return this._hasMaxCallCount && (this._callCount >= this.maxCallCount());
     }
   , callNow: function (source, args) {
 
@@ -35,10 +35,10 @@ eventify.EventListener = (function () {
         delete self._intervalTimeoutId;
       }
 
-      if (self.hasEmitInterval) {
+      if (self._hasEmitInterval) {
 
         var lastCallTime        = self._lastCallTime || 0
-          , intervalElapsed     = lastCallTime < (time - self.emitInterval);
+          , intervalElapsed     = lastCallTime < (time - self.callInterval());
 
         if (!intervalElapsed) {
 
@@ -51,14 +51,23 @@ eventify.EventListener = (function () {
             self._intervalTimeoutId = setTimeout(function () {
               self._call(time, source, self._stashedEmitArgs);
               delete self._stashedEmitArgs;
-            }, self.emitInterval);
+            }, self.callInterval);
           }
 
           return;
         }
       }
 
-      this._call(time, source, args);
+      self._call(time, source, args);
+    }
+  , callInterval: function () {
+      return this._callInterval;
+    }
+  , maxCallCount: function () {
+      return this._maxCallCount;
+    }
+  , callCount: function () {
+      return this._callCount;
     }
   , callOnNextTick: function (source, args) {
       return this.callAfterN(source, args, 0);

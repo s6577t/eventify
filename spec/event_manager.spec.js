@@ -95,9 +95,9 @@ describe("EventManager", function() {
     });
   });
 
-  describe('.withInterval(emitInterval, listenerFunction)', function () {
+  describe('.withInterval(callInterval, listenerFunction)', function () {
 
-    it('calls the listeners the first time and then not again until the emitInterval at which time the most recently emitted arguments are passed', function () {
+    it('calls the listeners the first time and then not again until the callInterval at which time the most recently emitted arguments are passed', function () {
       var callParams = [];
 
       runs(function() {
@@ -156,9 +156,9 @@ describe("EventManager", function() {
       expect(object.onSomeEvent().withInterval(1234, function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
 
-    it("should return an event listener with an emitInterval", function () {
+    it("should return an event listener with an callInterval", function () {
       var eventSubscription = object.onSomeEvent().withInterval(1234, function () {});
-      expect(eventSubscription.listener.emitInterval).toEqual(1234);
+      expect(eventSubscription.listener.callInterval()).toEqual(1234);
     });
 
     it("should remove the stash arguments from the event manager so as not to leak memory", function() {

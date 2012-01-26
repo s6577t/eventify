@@ -1,7 +1,7 @@
 > emit Interval per listener
 > delete __arguments prevent memory leakage?
 > events -> obj and eventNames -> ['onthis','onthat']
-> obj.onSomeEvent().bind(function () {}, { listenCount: N, listenInterval: Y });
+> obj.onSomeEvent().bind(function () {}, { listenCount: N, callInterval: Y });
   -> spec for a combination of the count and interval 
 -> oneTimeEvent is by configuration only
 -> does node trigger events callNow or nextTick

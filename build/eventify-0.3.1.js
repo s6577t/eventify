@@ -20,28 +20,27 @@
 */;function eventify(source) {
 
    // register a new event for the source
-   function installEvent (eventName) {
-
-      var eventManager = new eventify.EventManager(source, eventName);
+   function installEvent (options) {
+     
+      var eventManager = new eventify.EventManager(options);
 
       // assign the event listener registration function to the specified name
-      source[eventName] = function(listener) {
+      source[options.eventName] = function(listener) {
         if (listener) return eventManager.bind(listener);
         return eventManager;
       };
 
-      source[eventName].__eventifyEvent = true;
+      source[options.eventName]._eventifyEvent = true;
    }
 
    return {
      define: function (eventName, options) {
        options = options || {};
-
-       installEvent(eventName);
-
-       if (options.oneTimeEvent) {
-         source[eventName]().oneTimeEvent();
-       }
+       
+       options.source = source;
+       options.eventName = eventName;
+       
+       installEvent(options);
 
        return this;
      }
@@ -51,7 +50,7 @@
 eventify.removeAllListeners = function (object) {
 
   for (var member in object) {
-    if (object[member] && object[member].__eventifyEvent) {
+    if (object[member] && object[member]._eventifyEvent) {
       object[member]().unbindAll();
     }
   }
@@ -63,37 +62,43 @@ eventify.removeAllListeners = function (object) {
 
   function EventListener (options) {
 
-    this.listener        = options.listener;
-    this.emitInterval    = options.emitInterval;
-    this.hasEmitInterval = typeof this.emitInterval === 'number';
-    this._callCount      = 0;
+    this.listener         = options.listener;
+    this._callInterval    = options.callInterval;
+    this._hasEmitInterval = typeof this._callInterval === 'number';
+    this._callCount       = 0;
 
     if (typeof options.maxCallCount === 'number') {
-      this.hasMaxCallCount = true;
-      this.maxCallCount    = options.maxCallCount;
+      this._hasMaxCallCount = true;
+      this._maxCallCount    = options.maxCallCount;
     }
   }
 
   EventListener.prototype = {
     _call: function (time, source, args) {
-      if (!this.hasMaxCallCount || (this.hasMaxCallCount && (this._callCount < this.maxCallCount))) {
+      if (!this._hasMaxCallCount || (this._hasMaxCallCount && (this._callCount < this.maxCallCount()))) {
         this._lastCallTime = time;
         this._callCount++;
         return this.listener.apply(source, args);
       }
     }
   , hasExpired: function () {
-      return this.hasMaxCallCount && (this._callCount >= this.maxCallCount);
+      return this._hasMaxCallCount && (this._callCount >= this.maxCallCount());
     }
   , callNow: function (source, args) {
 
       var self = this
-        , time = new Date().getTime()
+        , time = new Date().getTime();
 
-      if (self.hasEmitInterval) {
+      // if there is a time set, clear it
+      if (self._intervalTimeoutId) {
+        clearTimeout(self._intervalTimeoutId);
+        delete self._intervalTimeoutId;
+      }
+
+      if (self._hasEmitInterval) {
 
         var lastCallTime        = self._lastCallTime || 0
-          , intervalElapsed     = lastCallTime < (time - self.emitInterval);
+          , intervalElapsed     = lastCallTime < (time - self.callInterval());
 
         if (!intervalElapsed) {
 
@@ -106,14 +111,23 @@ eventify.removeAllListeners = function (object) {
             self._intervalTimeoutId = setTimeout(function () {
               self._call(time, source, self._stashedEmitArgs);
               delete self._stashedEmitArgs;
-            }, self.emitInterval);
+            }, self.callInterval);
           }
 
           return;
         }
       }
-      
-      this._call(time, source, args);
+
+      self._call(time, source, args);
+    }
+  , callInterval: function () {
+      return this._callInterval;
+    }
+  , maxCallCount: function () {
+      return this._maxCallCount;
+    }
+  , callCount: function () {
+      return this._callCount;
     }
   , callOnNextTick: function (source, args) {
       return this.callAfterN(source, args, 0);
@@ -133,18 +147,12 @@ eventify.removeAllListeners = function (object) {
   function callEventListeners (args) {
     var self = this;
 
-    // if there is a time set, clear it
-    if (self._intervalTimeoutId) {
-      clearTimeout(this._intervalTimeoutId);
-      delete this._intervalTimeoutId;
-    }
-
     for (var i = 0, l = self._listeners.length; i < l; i++) {
 
       var listener = self._listeners[i];
 
-      listener.callNow(self.source, args);
-      
+      listener.callNow(self._source, args);
+
       if (listener.hasExpired()) {
         l--;
         i--;
@@ -155,9 +163,16 @@ eventify.removeAllListeners = function (object) {
     if (self._oneTimeEvent) self.unbindAll();
   }
 
-  function EventManager (source, eventName) {
-    this.source     = source;
-    this.eventName  = eventName;
+  function EventManager (options) {
+    
+    this._source        = options.source;
+    this._eventName     = options.eventName;
+    
+    if (options.oneTimeEvent) {
+      this._oneTimeEvent       = true;
+      this._oneTimeEventPassed = false;
+    }
+    
     this._listeners = [];
   };
 
@@ -181,7 +196,7 @@ eventify.removeAllListeners = function (object) {
       }
 
       if (this._oneTimeEvent && this._oneTimeEventPassed) {
-        listener.callOnNextTick(this.source, this._oneTimeEventEmitArgs);
+        listener.callOnNextTick(this._source, this._oneTimeEventEmitArgs);
       }
 
       this._listeners.push(listener);
@@ -194,15 +209,15 @@ eventify.removeAllListeners = function (object) {
         return registeredListener !== listenerToRemove && registeredListener.listener !== listenerToRemove;
       });
 
-      return this.source;
+      return this._source;
     }
   , unbindAll: function (listenerToRemove) {
       this._listeners = [];
-      return this.source;
+      return this._source;
     }
   , emit: function () {
 
-      var source    = this.source
+      var source    = this._source
         , self      = this;
 
       if (self._oneTimeEvent) {
@@ -218,10 +233,10 @@ eventify.removeAllListeners = function (object) {
 
       return true;
     }
-  , withInterval: function (emitInterval, listener) {
+  , withInterval: function (callInterval, listener) {
       return this.bind({
         listener: listener
-      , emitInterval: emitInterval
+      , callInterval: callInterval
       });
     }
   , listeners: function () {
@@ -236,10 +251,8 @@ eventify.removeAllListeners = function (object) {
       , maxCallCount: n
       });
     }
-  , oneTimeEvent: function () {
-      this._oneTimeEvent          = true;
-      this._oneTimeEventPassed = false;
-      return this.source;
+  , isOneTimeEvent: function () {
+      return !!this._oneTimeEvent;
     }
   };
 

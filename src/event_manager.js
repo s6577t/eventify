@@ -89,10 +89,10 @@ eventify.EventManager = (function () {
 
       return true;
     }
-  , withInterval: function (emitInterval, listener) {
+  , withInterval: function (callInterval, listener) {
       return this.bind({
         listener: listener
-      , emitInterval: emitInterval
+      , callInterval: callInterval
       });
     }
   , listeners: function () {
@@ -108,7 +108,7 @@ eventify.EventManager = (function () {
       });
     }
   , isOneTimeEvent: function () {
-      return this._oneTimeEvent;
+      return !!this._oneTimeEvent;
     }
   };
 
