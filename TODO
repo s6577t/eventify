@@ -1,15 +1,58 @@
+> emit Interval per listener
+> delete __arguments prevent memory leakage?
+> events -> obj and eventNames -> ['onthis','onthat']
+> obj.onSomeEvent().bind(function () {}, { listenCount: N, listenInterval: Y });
+  -> spec for a combination of the count and interval 
+-> oneTimeEvent is by configuration only
+-> does node trigger events callNow or nextTick
+
+> eventify(this, function (events) {
+    this === events === this function's this;
+    events.namespace('my-events');
+    events
+      .define('')
+      .define('whatevs');
+  });
+
+-> eventify(this, function () {
+  this.channel('my-channel');
+}).define()
+  
+  
+  
+> global events
+  -> eventify.onAnyEvent(function (eventName, ... other arguments ...) {
+      this //is the source
+     });
+  -> eventify(obj, 'lead-view').define(...)
+      eventify.listen('lead-view/onZoom', function () {})
+    * namespace optional but use encouraged - if not specified './' is used: './onZoom'
+  -> enable/disable event tracing which console.infos every event
+
+-> method to change channel name of and event source.
+
+
+
 obj = {}
 
-eventSource(obj).define('onSomeEvent')
+eventify(obj)
+  .define('onSomeEvent')
 
-eventSource.onSomeEvent().withInterval(20, function () {
+eventify.onSomeEvent().withInterval(20, function () {
   // behaves like
   // obj.onSomeEvent().throttle(20)
   // obj.onSomeEvent(function () {})
 });
 
+eventify(obj, 'socket').define('onSomethingReceived')
+obj.onSomethingReceived().emit();
+
+obj.onSomethingReceived(function () {})
+
+eventify.listen('socket/*')
 
 
+obj.onMouseMoved().withInterval(1234, function listener() {})
 
 DOC:
 this is the event source. important because and event should always pass it's source
@@ -20,7 +63,7 @@ this is the event source. important because and event should always pass it's so
  -> refactor throttling code
 
 
--> eventSource(obj).define(...) ... ; obj.eventNames() -> [...]
+-> eventify(obj).define(...) ... ; obj.eventNames() -> [...]
 
 implemenation good, rename to avoid nodejs events naming collision
 
@@ -51,3 +94,9 @@ events(this).define('name', options).define().define()
 options = {
   emitInterval: ...
 }
+
+-> load eventify into the documentation page so that with the console, documentation can be interactive.
+-> microjs for inspiration
+-> eventify(this).propogateFrom(that, 'onSomeEvent', 'onSomeOtherEvent') (no args implies all)
+-> documenting usage: there are many ways to bind/unbind. document ONE api and prefix the rest of the functions with a '_' ???
+-> doc tagged errors

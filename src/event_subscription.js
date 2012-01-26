@@ -1,20 +1,24 @@
-eventSource.EventSubscription = (function () {
+eventify.EventSubscription = (function () {
 
   function EventSubscription (sourceEventManager, listener) {
     this.sourceEventManager = sourceEventManager;
     this.listener           = listener;
+    this._active            = true;
   }
 
   EventSubscription.prototype = {
     cancel: function () {
-      var listener = this.listener;
-      this.sourceEventManager.unbind(listener);
-      delete this.listener;
-      delete this.sourceEventManager;
-      return listener;
+      
+      if (this.isActive()) {
+        this._active = false;
+        this.sourceEventManager.unbind(this.listener.listener);
+        return true;
+      }
+
+      return false;
     }
   , isActive: function () {
-      return !!(this.sourceEventManager && this.listener);
+      return this._active;
     }
   }
 

@@ -12,7 +12,7 @@ A 3.5k Javascript events library with zero dependencies.
 
     var object = {};
     
-    eventSource(object).define(
+    eventify(object).define(
       'onThis',
       'onThat',
       'onTheOther
@@ -117,9 +117,9 @@ Turns the event into a one-time event which behaves like a normal event until it
 * no event listeners will be called thereafter
 * returns object
 
-## `eventSource.remove()`
+## `eventify.removeAllListeners()`
 
-    eventSource.remove(object)
+    eventify.removeAllListeners(object)
 
 * removes all event listeners from all events but leaves the events in place. To remove and event from an object: `delete object.onSomeEvent;`
 * returns object

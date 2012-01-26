@@ -1,4 +1,4 @@
-describe("eventSource", function() {
+describe("eventify", function() {
   var object;
 
   beforeEach(function () {
@@ -8,23 +8,18 @@ describe("eventSource", function() {
   describe("defining events", function() {
 
     it("should allow events to be defined through a chainable interface", function() {
-      eventSource(object)
+      eventify(object)
         .define('onBoo')
         .define('onMangle')
         .define('onWhatever');
 
-      expect(object['onMangle']()).toBeInstanceOf(eventSource.EventManager);
-      expect(object['onBoo']()).toBeInstanceOf(eventSource.EventManager);
-      expect(object['onWhatever']()).toBeInstanceOf(eventSource.EventManager);
-    });
-
-    it("should allow an event to be defined with an emit interval", function() {
-      eventSource(object).define('onDrag', { emitInterval: 1234 });
-      expect(object.onDrag().emitInterval()).toEqual(1234);
+      expect(object['onMangle']()).toBeInstanceOf(eventify.EventManager);
+      expect(object['onBoo']()).toBeInstanceOf(eventify.EventManager);
+      expect(object['onWhatever']()).toBeInstanceOf(eventify.EventManager);
     });
 
     it("should allow an event to be defined as a one time event", function() {
-      eventSource(object).define('onDrag', { oneTimeEvent: true });
+      eventify(object).define('onDrag', { oneTimeEvent: true });
       expect(object.onDrag()._oneTimeEvent).toBe(true);
     });
   });
@@ -32,7 +27,7 @@ describe("eventSource", function() {
   describe("passing an event listener", function() {
 
     beforeEach(function () {
-      eventSource(object).define('onSomeEvent');
+      eventify(object).define('onSomeEvent');
     });
 
     it("should call bind() with the listener on the event manager", function() {
@@ -43,7 +38,7 @@ describe("eventSource", function() {
     });
 
     it("should return an event subscription", function () {
-      expect(object.onSomeEvent(function () {})).toBeInstanceOf(eventSource.EventSubscription);
+      expect(object.onSomeEvent(function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
   });
 });

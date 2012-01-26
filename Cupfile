@@ -1,10 +1,10 @@
 {
-  name: 'eventSource',
-  version: '0.3.0',
+  name: 'eventify',
+  version: '0.3.1',
   licence: 'licence.txt',
 
   javascripts: {
     spec: ['env/jasmine.js', 'env/jasmine-html.js', '*']
-  , src: ['eventSource.js', '*']
+  , src: ['eventify.js', '*']
   }
 }

@@ -1,10 +1,10 @@
-describe("eventSource.EventSubscription", function() {
+describe("eventify.EventSubscription", function() {
   var object;
   function listener1 () {}
 
   beforeEach(function () {
     object = {};
-    eventSource(object)
+    eventify(object)
       .define('onSomeEvent');
   });
 
@@ -19,9 +19,17 @@ describe("eventSource.EventSubscription", function() {
       expect(object.onSomeEvent().unbind).toHaveBeenCalledWith(listener1);
     });
 
-    it("it should return the listener", function() {
+    it("it should return true when called the first time", function() {
       var eventSubscription = object.onSomeEvent(listener1);
-      expect(eventSubscription.cancel()).toBe(listener1);
+      expect(eventSubscription.cancel()).toBe(true);
+    });
+
+    it("returns false on any successive calls", function() {
+      var eventSubscription = object.onSomeEvent(listener1);
+      eventSubscription.cancel();
+      expect(eventSubscription.cancel()).toBe(false);
+      expect(eventSubscription.cancel()).toBe(false);
+      expect(eventSubscription.cancel()).toBe(false);
     });
   });
 

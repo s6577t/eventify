@@ -202,7 +202,7 @@ jasmine.any = function(clazz) {
  * Spies should be created in test setup, before expectations.  They can then be checked, using the standard Jasmine
  * expectation syntax. Spies can be checked if they were called or not and what the calling params were.
  *
- * A Spy has the following fields: wasCalled, callCount, mostRecentCall, and argsForCall (see docs).
+ * A Spy has the following fields: wasCalled, maxCallCount, mostRecentCall, and argsForCall (see docs).
  *
  * Spies are torn down at the end of every spec.
  *
@@ -359,15 +359,15 @@ jasmine.Spy.prototype.andCallFake = function(fakeFunc) {
  *
  * foo.bar();
  *
- * expect(foo.bar.callCount).toEqual(1);
+ * expect(foo.bar.maxCallCount).toEqual(1);
  *
  * foo.bar.reset();
  *
- * expect(foo.bar.callCount).toEqual(0);
+ * expect(foo.bar.maxCallCount).toEqual(0);
  */
 jasmine.Spy.prototype.reset = function() {
   this.wasCalled = false;
-  this.callCount = 0;
+  this.maxCallCount = 0;
   this.argsForCall = [];
   this.calls = [];
   this.mostRecentCall = {};
@@ -377,7 +377,7 @@ jasmine.createSpy = function(name) {
 
   var spyObj = function() {
     spyObj.wasCalled = true;
-    spyObj.callCount++;
+    spyObj.maxCallCount++;
     var args = jasmine.util.argsToArray(arguments);
     spyObj.mostRecentCall.object = this;
     spyObj.mostRecentCall.args = args;
@@ -1335,7 +1335,7 @@ jasmine.Matchers.prototype.toHaveBeenCalledWith = function() {
     throw new Error('Expected a spy, but got ' + jasmine.pp(this.actual) + '.');
   }
   this.message = function() {
-    if (this.actual.callCount === 0) {
+    if (this.actual.maxCallCount === 0) {
       // todo: what should the failure message for .not.toHaveBeenCalledWith() be? is this right? test better. [xw]
       return [
         "Expected spy " + this.actual.identity + " to have been called with " + jasmine.pp(expectedArgs) + " but it was never called.",

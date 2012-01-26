@@ -1,20 +1,40 @@
-describe("event manager", function() {
+describe("EventManager", function() {
 
   var object;
 
   beforeEach(function () {
     object = {};
-    eventSource(object).define('onSomeEvent');
+    eventify(object)
+      .define('onSomeEvent')
+      .define('onOneTime', { oneTimeEvent: true });
   });
 
-  describe("bind()", function() {
+  describe(".bind()", function() {
+
+    it("throws an error if no listener is specified", function() {
+      expect(function () {
+        object.onSomeEvent().bind();
+      }).toThrow();
+    });
 
     it("should return an event subscription", function () {
-      expect(object.onSomeEvent().bind(function () {})).toBeInstanceOf(eventSource.EventSubscription);
+      expect(object.onSomeEvent().bind(function () {})).toBeInstanceOf(eventify.EventSubscription);
+    });
+
+    it("creates an event listener", function() {
+      var listener = function () {}
+      var subs = object.onSomeEvent().bind(listener);
+      expect(subs.listener).toBeInstanceOf(eventify.EventListener);
+    });
+
+    it("creates an EventListener if a function is passed", function() {
+      var listener = function () {};
+      var subs = object.onSomeEvent().bind(listener);
+      expect(subs.listener.listener).toBe(listener);
     });
   });
 
-  describe('emit()', function () {
+  describe('.emit()', function () {
 
     it('calls the listeners', function () {
 
@@ -44,23 +64,22 @@ describe("event manager", function() {
       expect(passedArg).toEqual(arg);
     });
 
-    it("should return true if the event is emitted", function() {
+    it("returns true if the event is emitted", function() {
       expect(object.onSomeEvent().emit()).toBe(true);
     });
 
-    it("should return false if the event is a one time event and has already been emitted", function() {
-      object.onSomeEvent().oneTimeEvent();
-      object.onSomeEvent().emit();
-      expect(object.onSomeEvent().emit()).toBe(false);
+    it("returns false if the event is a one time event and has already been emitted", function() {
+      object.onOneTime().emit();
+      expect(object.onOneTime().emit()).toBe(false);
     });
 
-    it("should return false if the event emit is throttled", function() {
-      object.onSomeEvent().emitInterval(100)
+    it("returns true if the event emit is throttled", function() {
+      object.onSomeEvent().withInterval(100, function () {})
       object.onSomeEvent().emit();
-      expect(object.onSomeEvent().emit()).toBe(false);
+      expect(object.onSomeEvent().emit()).toBe(true);
     });
 
-    it('should call listeners in their original context', function () {
+    it('calls listeners in their original context', function () {
 
       var context = null;
       var eventHandler = {
@@ -76,7 +95,7 @@ describe("event manager", function() {
     });
   });
 
-  describe('emitInterval()', function () {
+  describe('.withInterval(emitInterval, listenerFunction)', function () {
 
     it('calls the listeners the first time and then not again until the emitInterval at which time the most recently emitted arguments are passed', function () {
       var callParams = [];
@@ -87,8 +106,7 @@ describe("event manager", function() {
           callParams.push(value);
         };
 
-        object.onSomeEvent(listener);
-        object.onSomeEvent().emitInterval(200);
+        object.onSomeEvent().withInterval(200, listener);
 
         for (var i = 0; i <= 100; i++) {
           object.onSomeEvent().emit(i);
@@ -98,32 +116,78 @@ describe("event manager", function() {
       waits(200);
 
       runs(function() {
+        expect(callParams.length).toEqual(2)
         expect(callParams[0]).toEqual(0);
         expect(callParams[callParams.length-1]).toEqual(100);
       });
     });
 
-    it("returns object when passed an interval", function() {
-      expect(object.onSomeEvent().emitInterval(123)).toBe(object);
+    it('calls other event listeners every time the event is emitted', function () {
+
+      var callParams      = []
+      ,   otherCallParams = [];
+
+      runs(function() {
+
+        var listener = function (value) {
+          callParams.push(value);
+        };
+
+        var listener2 = function (value) {
+          otherCallParams.push(value);
+        };
+
+        object.onSomeEvent().withInterval(20, listener);
+        object.onSomeEvent(listener2);
+        
+        for (var i = 1; i <= 100; i++) {
+          object.onSomeEvent().emit(i);
+        }
+      });
+
+      waits(20);
+
+      runs(function() {
+        expect(otherCallParams.length).toEqual(100);
+      });
     });
 
-    it("returns the emit interval when passed no arguments", function() {
-      object.onSomeEvent().emitInterval(1234);
-      expect(object.onSomeEvent().emitInterval()).toBe(1234);
+    it("should return an event subscription", function () {
+      expect(object.onSomeEvent().withInterval(1234, function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
 
-    it("should remove the emitInterval when called with null", function() {
+    it("should return an event listener with an emitInterval", function () {
+      var eventSubscription = object.onSomeEvent().withInterval(1234, function () {});
+      expect(eventSubscription.listener.emitInterval).toEqual(1234);
+    });
 
-      object.onSomeEvent().emitInterval(100);
-      expect(object.onSomeEvent()._emitInterval).toEqual(100);
+    it("should remove the stash arguments from the event manager so as not to leak memory", function() {
+      var callParams = [];
 
-      object.onSomeEvent().emitInterval(null);
-      expect(object.onSomeEvent()._emitInterval).toBeUndefined();
+      runs(function() {
+
+        var listener = function (value) {
+          callParams.push(value);
+        };
+
+        object.onSomeEvent().withInterval(20, listener);
+
+        for (var i = 0; i <= 100; i++) {
+          object.onSomeEvent().emit(i);
+        }
+      });
+
+      waits(20);
+
+      runs(function() {
+        expect(object.onOneTime()._oneTimeEventEmitArgs).toBeUndefined();
+      });
     });
   });
 
-  describe('unbind()', function () {
-    it('should not call the removed handler', function () {
+  describe('.unbind()', function () {
+
+    it('should not call the removed handler when passed the listener function', function () {
 
       object.listener = function () {}
 
@@ -136,12 +200,26 @@ describe("event manager", function() {
       expect(object.listener).not.toHaveBeenCalled();
     });
 
+    it('should not call the removed handler when passed the eventify.EventListener', function () {
+
+      object.listener = function () {}
+
+      spyOn(object, 'listener');
+
+      var eventListener = object.onSomeEvent(object.listener).listener;
+      object.onSomeEvent().unbind(eventListener);
+      object.onSomeEvent().emit();
+
+      expect(eventListener).not.toBeNull();
+      expect(object.listener).not.toHaveBeenCalled();
+    });
+
     it("should return the source", function() {
       expect(object.onSomeEvent().unbind(function () {})).toBe(object);
     });
   });
 
-  describe('unbindAll()', function () {
+  describe('.unbindAll()', function () {
     it('should not call any listeners when events are emitted', function () {
 
       object.listener1 = function () {};
@@ -168,76 +246,91 @@ describe("event manager", function() {
     });
   });
 
-  describe("listeners()", function() {
+  describe(".listeners()", function() {
     it("should return an array of the event listeners", function() {
 
       var listener = function () {};
       object.onSomeEvent(listener);
 
-      expect(object.onSomeEvent().listeners()).toEqual([listener]);
+      var ls = object.onSomeEvent().listeners();
+
+      expect(ls.length).toEqual(1);
+      expect(ls[0].listener).toBe(listener);
     });
   });
 
-  describe("once(listener)", function() {
-    it("should only call the listener once", function() {
-      var obj = {};
-      eventSource(obj).define('onEvent');
+  describe(".once(listener)", function() {
 
-      var count = 0;
+    it("is a short cut for nTimes", function() {
+      spyOn(object.onSomeEvent(), 'nTimes');
 
-      obj.onEvent().once(function () {
-        count++;
-      });
+      var listener = function () {};
+      object.onSomeEvent().once(listener);
 
-      obj.onEvent().emit();
-      obj.onEvent().emit();
-
-      expect(count).toEqual(1);
+      expect(object.onSomeEvent().nTimes).toHaveBeenCalledWith(1, listener);
     });
 
     it("should return an event subscription", function () {
-      expect(object.onSomeEvent().once(function () {})).toBeInstanceOf(eventSource.EventSubscription);
+      expect(object.onSomeEvent().once(function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
   });
 
-  describe("oneTimeEvent()", function() {
+  describe(".nTimes(n, listener)", function() {
 
-    beforeEach(function () {
-      object.onSomeEvent().oneTimeEvent();
+    [0, 1, 2, 10, 100].forEach(function (n) {
+      it("should only call the listener " + n + " times", function() {
+        var obj = {};
+        eventify(obj).define('onEvent');
+
+        var count = 0;
+
+        obj.onEvent().nTimes(n, function () {
+          count++;
+        });
+
+        for (var i = 0; i <= n; i++) {
+          obj.onEvent().emit();
+        }
+
+        expect(count).toEqual(n);
+      });
     })
 
-    it("should return object", function() {
-      expect(object.onSomeEvent().oneTimeEvent()).toBe(object);
+    it("should return an event subscription", function () {
+      expect(object.onSomeEvent().once(function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
+  });
+
+  describe("one time events", function() {
 
     it("should call event handlers in the normal way the first time the event is emitted", function() {
       var called = false;
 
-      object.onSomeEvent(function () { called = true});
+      object.onOneTime(function () { called = true});
 
       expect(called).toEqual(false);
 
-      object.onSomeEvent().emit();
+      object.onOneTime().emit();
 
       expect(called).toEqual(true);
     });
 
     it("should call back on next tick if the one time event has passed", function() {
-      
+
       var called = false;
       var args;
-      
+
       runs(function () {
 
-        object.onSomeEvent().emit(1,2,3);
+        object.onOneTime().emit(1,2,3);
 
-        object.onSomeEvent(function () { args = arguments; called = true });
+        object.onOneTime(function () { args = arguments; called = true });
 
-        
+
       });
-      
+
       waits(1);
-      
+
       runs(function () {
         expect(called).toEqual(true);
         expect(args).toEqual([1,2,3]);
@@ -249,12 +342,12 @@ describe("event manager", function() {
       it("should not call listeners more than once", function() {
         var calls = 0;
 
-        object.onSomeEvent(function () {
+        object.onOneTime(function () {
           calls++;
         });
 
-        object.onSomeEvent().emit();
-        object.onSomeEvent().emit();
+        object.onOneTime().emit();
+        object.onOneTime().emit();
 
         expect(calls).toBe(1);
       });
