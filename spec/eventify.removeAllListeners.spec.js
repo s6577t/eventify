@@ -15,14 +15,20 @@ describe('eventify.removeAllListeners()', function () {
   });
 
   it('should remove all listeners for events installed by events', function () {
-    eventify(object).define('onDo').define('onDont');
+    eventify(object, function () {
+      this.define('onDo');
+      this.define('onDont');
+    });
     eventify.removeAllListeners(object);
     expect(object.onDo().listeners().length).toEqual(0);
     expect(object.onDont().listeners().length).toEqual(0);
   });
 
   it("should leave all events on the object", function() {
-    eventify(object).define('onDo').define('onDont');
+    eventify(object, function () {
+      this.define('onDo');
+      this.define('onDont');
+    });
     eventify.removeAllListeners(object);
     expect(object.onDo).not.toBeUndefined();
     expect(object.onDont).not.toBeUndefined();

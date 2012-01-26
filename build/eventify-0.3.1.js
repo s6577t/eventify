@@ -17,11 +17,11 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-*/;function eventify(source) {
+*/;function eventify(source, configure) {
 
    // register a new event for the source
    function installEvent (options) {
-     
+
       var eventManager = new eventify.EventManager(options);
 
       // assign the event listener registration function to the specified name
@@ -33,18 +33,24 @@
       source[options.eventName]._eventifyEvent = true;
    }
 
-   return {
+   var configurationApi = {
      define: function (eventName, options) {
        options = options || {};
-       
+
        options.source = source;
        options.eventName = eventName;
-       
+
        installEvent(options);
 
        return this;
      }
    };
+   
+   if (typeof configure === 'function') {
+     configure.call(configurationApi, configurationApi);
+   }
+
+   return source;
 }
 
 eventify.removeAllListeners = function (object) {

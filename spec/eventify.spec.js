@@ -1,4 +1,4 @@
-describe("eventify", function() {
+describe("eventifying an object", function() {
   var object;
 
   beforeEach(function () {
@@ -8,10 +8,12 @@ describe("eventify", function() {
   describe("defining events", function() {
 
     it("should allow events to be defined through a chainable interface", function() {
-      eventify(object)
-        .define('onBoo')
-        .define('onMangle')
-        .define('onWhatever');
+
+      eventify(object, function () {
+        this.define('onBoo');
+        this.define('onMangle');
+        this.define('onWhatever');
+      });
 
       expect(object['onMangle']()).toBeInstanceOf(eventify.EventManager);
       expect(object['onBoo']()).toBeInstanceOf(eventify.EventManager);
@@ -19,7 +21,9 @@ describe("eventify", function() {
     });
 
     it("should allow an event to be defined as a one time event", function() {
-      eventify(object).define('onDrag', { oneTimeEvent: true });
+      eventify(object, function () {
+        this.define('onDrag', { oneTimeEvent: true });
+      });
       expect(object.onDrag()._oneTimeEvent).toBe(true);
     });
   });
@@ -27,7 +31,9 @@ describe("eventify", function() {
   describe("passing an event listener", function() {
 
     beforeEach(function () {
-      eventify(object).define('onSomeEvent');
+      eventify(object, function () {
+        this.define('onSomeEvent');
+      });
     });
 
     it("should call bind() with the listener on the event manager", function() {
@@ -40,5 +46,20 @@ describe("eventify", function() {
     it("should return an event subscription", function () {
       expect(object.onSomeEvent(function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
+  });
+
+  it('passes the configurationApi as an argument and as the context of the configuration function', function () {
+    var context, arg;
+    eventify({}, function (a) {
+      context = this;
+      arg = a;
+    });
+    
+    expect(arg).toBe(context);
+  });
+  
+  it("returns the eventified object", function() {
+    var obj = {};
+    expect(eventify(obj, function () {})).toBe(obj);
   });
 });

@@ -4,9 +4,11 @@ describe("EventManager", function() {
 
   beforeEach(function () {
     object = {};
-    eventify(object)
-      .define('onSomeEvent')
-      .define('onOneTime', { oneTimeEvent: true });
+
+    eventify(object, function () {
+      this.define('onSomeEvent');
+      this.define('onOneTime', { oneTimeEvent: true });
+    });
   });
 
   describe(".bind()", function() {
@@ -139,7 +141,7 @@ describe("EventManager", function() {
 
         object.onSomeEvent().withInterval(20, listener);
         object.onSomeEvent(listener2);
-        
+
         for (var i = 1; i <= 100; i++) {
           object.onSomeEvent().emit(i);
         }
@@ -280,7 +282,9 @@ describe("EventManager", function() {
     [0, 1, 2, 10, 100].forEach(function (n) {
       it("should only call the listener " + n + " times", function() {
         var obj = {};
-        eventify(obj).define('onEvent');
+        eventify(obj, function () {
+          this.define('onEvent');
+        });
 
         var count = 0;
 

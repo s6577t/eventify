@@ -1,24 +1,10 @@
-> emit Interval per listener
-> delete __arguments prevent memory leakage?
-> events -> obj and eventNames -> ['onthis','onthat']
-> obj.onSomeEvent().bind(function () {}, { listenCount: N, callInterval: Y });
-  -> spec for a combination of the count and interval 
--> oneTimeEvent is by configuration only
--> does node trigger events callNow or nextTick
-
-> eventify(this, function (events) {
-    this === events === this function's this;
-    events.namespace('my-events');
-    events
-      .define('')
-      .define('whatevs');
-  });
-
--> eventify(this, function () {
-  this.channel('my-channel');
-}).define()
-  
-  
+!!! unbindAll leaves event subscriptions active
+ --- make bind, unbind, unbind all replaced with
+  - EventSubscription#activate()
+  - EventSubscription#cancel()
+  - EventSubscription#source
+  - EventSubscription#eventName
+  - EventSubscribers#cancelAll()
   
 > global events
   -> eventify.onAnyEvent(function (eventName, ... other arguments ...) {
@@ -49,8 +35,9 @@ obj.onSomethingReceived().emit();
 
 obj.onSomethingReceived(function () {})
 
-eventify.listen('socket/*')
-
+var subs = eventify.listen(function () {}) // any event
+var subs = eventify.listen('./onSomeEvent', function () {}) //unnamespaced events
+var subs = eventify.listen('in-some-channel/onSomeEvent', function () {});
 
 obj.onMouseMoved().withInterval(1234, function listener() {})
 
@@ -67,33 +54,8 @@ this is the event source. important because and event should always pass it's so
 
 implemenation good, rename to avoid nodejs events naming collision
 
-> oneTimeEventSpecs dont pass now that it calls back on next tick.
+
 > update the readme (oneTimeEvent, called on next tick after first)
-> update version to 0.3.0
-
-
-var eventSubscription = object.onSomeEvent(function () {
-
-});
-
-var eventSubscription = object.onSomeEvent().once(function () {
-
-});
-
-var eventSubscription = object.onSomeEvent().withInterval(N, function () {
-
-});
-
-eventSubscription.isActive();
-eventSubscription.cancel();
-
-var subscriptions = object.onSomeEvent().subscriptions();
-subscriptions.cancelAll();
-
-events(this).define('name', options).define().define()
-options = {
-  emitInterval: ...
-}
 
 -> load eventify into the documentation page so that with the console, documentation can be interactive.
 -> microjs for inspiration

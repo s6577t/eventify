@@ -4,8 +4,9 @@ describe("eventify.EventSubscription", function() {
 
   beforeEach(function () {
     object = {};
-    eventify(object)
-      .define('onSomeEvent');
+    eventify(object, function () {
+      this.define('onSomeEvent');
+    });
   });
 
   describe("cancel()", function() {
