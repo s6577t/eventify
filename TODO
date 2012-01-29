@@ -1,43 +1,5 @@
-
--> spec combinations of nTime listeners on oneTimeEvents
- -> what if I listen to a oneTimeEvent 0 times, I should NOT get called
-
-
-obj = {}
-
-eventify(obj)
-  .define('onSomeEvent')
-
-eventify.onSomeEvent().withInterval(20, function () {
-  // behaves like
-  // obj.onSomeEvent().throttle(20)
-  // obj.onSomeEvent(function () {})
-});
-
-eventify(obj, 'socket').define('onSomethingReceived')
-obj.onSomethingReceived().emit();
-
-obj.onSomethingReceived(function () {})
-
-var subs = eventify.subscribe(function () {}) // any event
-var subs = eventify.subscribe('./onSomeEvent', function () {}) //unnamespaced events
-var subs = eventify.subscribe('in-some-channel/onSomeEvent', function () {});
-
-obj.onMouseMoved().withInterval(1234, function listener() {})
-
 DOC:
 this is the event source. important because and event should always pass it's source
-
-
--> object.onSomeEvent().withInterval(N, listener);
- -> remove throttle() from define() and manager
- -> refactor throttling code
-
-
--> eventify(obj).define(...) ... ; obj.eventNames() -> [...]
-
-implemenation good, rename to avoid nodejs events naming collision
-
 
 > update the readme (oneTimeEvent, called on next tick after first)
 
