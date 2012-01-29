@@ -1,22 +1,15 @@
-!!! unbindAll leaves event subscriptions active
- --- make bind, unbind, unbind all replaced with
-  - EventSubscription#activate()
-  - EventSubscription#cancel()
-  - EventSubscription#source
-  - EventSubscription#eventName
-  - EventSubscribers#cancelAll()
-  
 > global events
   -> eventify.onAnyEvent(function (eventName, ... other arguments ...) {
-      this //is the source
+       this //is the source
      });
   -> eventify(obj, 'lead-view').define(...)
-      eventify.listen('lead-view/onZoom', function () {})
+      eventify.subscribe('lead-view/onZoom', function () {})
     * namespace optional but use encouraged - if not specified './' is used: './onZoom'
   -> enable/disable event tracing which console.infos every event
+  -> late global oneTimeEvent listeners should be called on next tick
 
--> method to change channel name of and event source.
-
+-> spec combinations of nTime listeners on oneTimeEvents
+ -> what if I listen to a oneTimeEvent 0 times, I should NOT get called
 
 
 obj = {}
@@ -35,9 +28,9 @@ obj.onSomethingReceived().emit();
 
 obj.onSomethingReceived(function () {})
 
-var subs = eventify.listen(function () {}) // any event
-var subs = eventify.listen('./onSomeEvent', function () {}) //unnamespaced events
-var subs = eventify.listen('in-some-channel/onSomeEvent', function () {});
+var subs = eventify.subscribe(function () {}) // any event
+var subs = eventify.subscribe('./onSomeEvent', function () {}) //unnamespaced events
+var subs = eventify.subscribe('in-some-channel/onSomeEvent', function () {});
 
 obj.onMouseMoved().withInterval(1234, function listener() {})
 
@@ -61,4 +54,5 @@ implemenation good, rename to avoid nodejs events naming collision
 -> microjs for inspiration
 -> eventify(this).propogateFrom(that, 'onSomeEvent', 'onSomeOtherEvent') (no args implies all)
 -> documenting usage: there are many ways to bind/unbind. document ONE api and prefix the rest of the functions with a '_' ???
--> doc tagged errors
+-> doc: tagged errors
+-> doc: EventSubscription EventListener and Event are NOT intended for instantiation outside of this library

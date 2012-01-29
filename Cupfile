@@ -5,6 +5,6 @@
 
   javascripts: {
     spec: ['env/jasmine.js', 'env/jasmine-html.js', '*']
-  , src: ['eventify.js', '*']
+  , src: ['eventify.js', 'eventify/event_subscriptions.js', '*']
   }
 }

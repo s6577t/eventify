@@ -1,32 +1,52 @@
-function eventify(source, configure) {
+function eventify(source) {
 
-   // register a new event for the source
+    var namespace, configure;
+
+    if (arguments.length === 3) {
+      namespace = arguments[1];
+      configure = arguments[2];
+    } else {
+      configure = arguments[1];
+    }
+
    function installEvent (options) {
 
-      var eventManager = new eventify.EventManager(options);
+      var _event = new eventify.Event(options);
 
       // assign the event listener registration function to the specified name
       source[options.eventName] = function(listener) {
-        if (listener) return eventManager.bind(listener);
-        return eventManager;
+
+        if (typeof listener === 'function') {
+          return _event._listen({
+            listener: listener
+          });
+        }
+
+        return _event;
       };
 
-      source[options.eventName]._eventifyEvent = true;
+      source[options.eventName]._returnsAnEventifyEvent = true;
+
+      if (_event.isOneTimeEvent()) {
+        eventify._oneTimeEvents[_event.fullName()] = { hasOccurred: false };
+      }
    }
 
    var configurationApi = {
+
      define: function (eventName, options) {
        options = options || {};
 
-       options.source = source;
+       options.source    = source;
        options.eventName = eventName;
+       options.namespace = namespace
 
        installEvent(options);
 
        return this;
      }
    };
-   
+
    if (typeof configure === 'function') {
      configure.call(configurationApi, configurationApi);
    }
@@ -34,14 +54,13 @@ function eventify(source, configure) {
    return source;
 }
 
-eventify.removeAllListeners = function (object) {
+eventify.cancelAllSubscriptionsOn = function (object) {
 
   for (var member in object) {
-    if (object[member] && object[member]._eventifyEvent) {
-      object[member]().unbindAll();
+    if (object[member] && object[member]._returnsAnEventifyEvent) {
+      object[member]().subscriptions().cancelAll();
     }
   }
 
   return object;
 }
-

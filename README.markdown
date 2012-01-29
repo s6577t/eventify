@@ -4,7 +4,7 @@ A 3.5k Javascript events library with zero dependencies.
 
 ## Principles
 
-* Event declaration and emission should be explicit
+* Event declaration and emission should be clear and explicit
 * Registering event listeners for events that an object does not emit should fail fast
 * Evented programming is essential to javascript; why not have an suitably capable events library
 
