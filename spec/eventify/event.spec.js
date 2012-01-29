@@ -425,6 +425,23 @@ describe("eventify.Event", function() {
     it("should return an event subscription", function () {
       expect(object.onSomeEvent().once(function () {})).toBeInstanceOf(eventify.EventSubscription);
     });
+    
+    describe("when the event is a oneTimeEvent", function() {
+      it("should not call the listener on next tick if n=0", function() {
+        var listener = jasmine.createSpy();
+        
+        object.onOneTime().emit();
+        
+        // the event must have previosuly occurred for the callback on subscription
+        object.onOneTime().nTimes(0, listener);
+        
+        waits(1);
+        
+        runs(function () {
+          expect(listener).not.toHaveBeenCalled();
+        });
+      });
+    });
   });
 
   describe("#source()", function() {

@@ -1,12 +1,3 @@
-> global events
-  -> eventify.onAnyEvent(function (eventName, ... other arguments ...) {
-       this //is the source
-     });
-  -> eventify(obj, 'lead-view').define(...)
-      eventify.subscribe('lead-view/onZoom', function () {})
-    * namespace optional but use encouraged - if not specified './' is used: './onZoom'
-  -> enable/disable event tracing which console.infos every event
-  -> late global oneTimeEvent listeners should be called on next tick
 
 -> spec combinations of nTime listeners on oneTimeEvents
  -> what if I listen to a oneTimeEvent 0 times, I should NOT get called
