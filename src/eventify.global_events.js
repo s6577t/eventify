@@ -22,11 +22,11 @@
     };
   }
 
-  function getEventProperties (namespaceAndName) {
+  function getSubscriptions (parsedNameAndNamespace) {
 
-    if (namespaceAndName) {
+    if (parsedNameAndNamespace) {
 
-      namespaceAndName = parseNamespaceAndName(namespaceAndName);
+      namespaceAndName = parsedNameAndNamespace;
 
       var eventName = namespaceAndName.eventName;
       var namespace = namespaceAndName.namespace;
@@ -36,18 +36,13 @@
       namespace = namedSubscriptions[namespace];
       namespace[eventName] = namespace[eventName] || new eventify.EventSubscriptions;
 
-      return {
-        parsedNamespaceAndName: namespaceAndName
-      , subscriptions: namespace[eventName]
-      };
-    } else {
-      return {
-        subscriptions: catchAllSubscriptions
-      };
+      return namespace[eventName];
     }
+
+    return catchAllSubscriptions
   }
 
-  eventify.subscribe = function () {
+  eventify.listen = function () {
     var namespaceAndName, listener;
 
     if (arguments.length === 1) {
@@ -56,8 +51,12 @@
       namespaceAndName = arguments[0];
       listener         = arguments[1];
     }
+    
+    if (namespaceAndName) {
+      var parsedNamespaceAndName = parseNamespaceAndName(namespaceAndName);
+    }
 
-    var subscriptions = getEventProperties(namespaceAndName).subscriptions;
+    var subscriptions = getSubscriptions(parsedNamespaceAndName);
 
     var eventListener = new eventify.EventListener({
       listener: listener
@@ -77,39 +76,39 @@
     });
   }
 
-  eventify._emit = function (namespaceAndName, source, args) {
-    var oneTimeEvent = eventify._oneTimeEvents[namespaceAndName];
+  eventify._emit = function (event, args) {
+    
+    var source           = event.source()
+      , args             = args || [];
+      
+    var namespaceAndName = {
+      namespace: event.namespace()
+    , eventName: event.name()
+    };
+
+    var oneTimeEvent = eventify._oneTimeEvents[event.fullName()];
 
     if (oneTimeEvent) {
       if (oneTimeEvent.hasOccurred) {
         return false;
       }
-      oneTimeEvent.hasOccurred = true
-      oneTimeEvent._stashedOneTimeEventArgs   = args
+      oneTimeEvent.hasOccurred                = true;
+      oneTimeEvent._stashedOneTimeEventArgs   = args;
       oneTimeEvent._stashedOneTimeEventSource = source;
     }
 
-    var eventProperties = getEventProperties(namespaceAndName);
+    var subscriptions = getSubscriptions(namespaceAndName);
 
-    eventProperties.subscriptions._callAll(source, args);
+    subscriptions._callAll(source, args);
 
     if (oneTimeEvent) {
-      eventProperties.subscriptions.cancelAll();
+      subscriptions.cancelAll();
     }
-
-    catchAllSubscriptions._callAll(source, [{
-      namespace: eventProperties.parsedNamespaceAndName.namespace
-    , eventName: eventProperties.parsedNamespaceAndName.eventName
-    , args: args
-    }]);
-  }
-
-  eventify.emit = function (namespaceAndName, source, args) {
-    var namespaceAndName = arguments[0]
-      , source           = arguments[1]
-      , args             = Array.prototype.slice.call(arguments, 2, arguments.length)
-
-    eventify._emit(namespaceAndName, source, args);
+    
+    var catchallArg = namespaceAndName;
+    catchallArg.args = args;
+    
+    catchAllSubscriptions._callAll(source, [catchallArg]);
   }
 
 })();

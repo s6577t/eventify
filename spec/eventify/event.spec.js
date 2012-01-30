@@ -148,7 +148,7 @@ describe("eventify.Event", function() {
       it("does not call global event listeners after the first emission", function () {
         var count = 0;
 
-        eventify.subscribe('./onOneTime', function () {
+        eventify.listen('./onOneTime', function () {
           count++;
         });
 
@@ -161,7 +161,7 @@ describe("eventify.Event", function() {
       it("does not call catchall event listeners after the first emission", function () {
         var count = 0;
 
-        eventify.subscribe(function () {
+        eventify.listen(function () {
           count++;
         });
 
@@ -171,7 +171,7 @@ describe("eventify.Event", function() {
         expect(count).toBe(1);
       });
       
-      it("causes existing subscribers to become inactive", function() {
+      it("causes existing listenrs to become inactive", function() {
 
         var subs = object.onOneTime(function () {});
 
@@ -190,7 +190,7 @@ describe("eventify.Event", function() {
       it("calls the unnamespaced onSomeEvent in ./onSomeEvent", function() {
 
         spyOn(object, 'listener');
-        eventify.subscribe('./onSomeEvent', object.listener);
+        eventify.listen('./onSomeEvent', object.listener);
 
         object.onSomeEvent().emit();
 
@@ -200,7 +200,7 @@ describe("eventify.Event", function() {
       it("calls the in-a-namespace in in-a-namespace/onSomeOtherEvent", function () {
 
         spyOn(object, 'listener');
-        eventify.subscribe('in-a-namespace/onSomeOtherEvent', object.listener);
+        eventify.listen('in-a-namespace/onSomeOtherEvent', object.listener);
 
         object.onSomeOtherEvent().emit();
 
@@ -214,7 +214,7 @@ describe("eventify.Event", function() {
           arg = a;
         });
 
-        eventify.subscribe(listener);
+        eventify.listen(listener);
 
         object.onSomeOtherEvent().emit(1,2,3,4);
 
@@ -231,7 +231,7 @@ describe("eventify.Event", function() {
 
         spyOn(object, 'listener').andCallThrough();
 
-        eventify.subscribe(object.listener);
+        eventify.listen(object.listener);
 
         object.onSomeEvent().emit('hello');
 
@@ -245,7 +245,7 @@ describe("eventify.Event", function() {
       it("calls global listeners in the context of the source object", function () {
         var context;
 
-        eventify.subscribe(function () {
+        eventify.listen(function () {
           context = this;
         });
 

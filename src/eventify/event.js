@@ -45,7 +45,7 @@ eventify.Event = (function () {
       return this._subscriptions;
     }
   , emit: function () {
-
+    
       var self      = this
         , source    = this._source;
 
@@ -59,7 +59,7 @@ eventify.Event = (function () {
       self._hasOccurred = true;
 
       self.subscriptions()._callAll(source, arguments);
-      eventify._emit(self.fullName(), source, arguments);
+      eventify._emit(self, arguments);
 
       if (self.isOneTimeEvent()) {
         self.subscriptions().cancelAll();

@@ -137,16 +137,16 @@ describe("eventify", function() {
     })
   });
 
-  describe('.subscribe()', function () {
+  describe('.listen()', function () {
 
     it("returns an EventSubscription", function() {
-      var subs = eventify.subscribe('./onSomeEvent', function () {});
+      var subs = eventify.listen('./onSomeEvent', function () {});
       expect(subs).toBeInstanceOf(eventify.EventSubscription);
     });
 
-    it("throws an error if I try to subscribe to an event without a slash such as 'anEvent'", function() {
+    it("throws an error if I try to listen to an event without a slash such as 'anEvent'", function() {
       expect(function () {
-        eventify.subscribe('anEvent', function () {});
+        eventify.listen('anEvent', function () {});
       }).toThrow();
     });
 
@@ -163,7 +163,7 @@ describe("eventify", function() {
 
       describe("#isActive()", function() {
         it("correctly indicates whether the subscription is active", function () {
-          var subscription = eventify.subscribe('alert/beforeSheGetsHome', function () {});
+          var subscription = eventify.listen('alert/beforeSheGetsHome', function () {});
           expect(subscription.isActive()).toBe(true);
           subscription.cancel();
           expect(subscription.isActive()).toBe(false);
@@ -177,7 +177,7 @@ describe("eventify", function() {
 
             var listener = jasmine.createSpy();
 
-            var subs = eventify.subscribe(listener);
+            var subs = eventify.listen(listener);
 
             subs.cancel();
 
@@ -192,7 +192,7 @@ describe("eventify", function() {
 
             var listener = jasmine.createSpy();
 
-            var subs = eventify.subscribe('specs/onSomeOccurence', listener);
+            var subs = eventify.listen('specs/onSomeOccurence', listener);
 
             subs.cancel();
 
@@ -215,7 +215,7 @@ describe("eventify", function() {
       it("should call the event normally the first time the event occurs", function() {
 
         var listener = jasmine.createSpy();
-        eventify.subscribe('global-onetime/whenItHappens', listener);
+        eventify.listen('global-onetime/whenItHappens', listener);
 
         object.whenItHappens().emit();
 
@@ -226,7 +226,7 @@ describe("eventify", function() {
 
         it("causes existing subscribers to become inactive", function() {
 
-          var subs = eventify.subscribe('global-onetime/whenItHappens', function () {});
+          var subs = eventify.listen('global-onetime/whenItHappens', function () {});
 
           object.whenItHappens().emit();
 
@@ -239,7 +239,7 @@ describe("eventify", function() {
 
           object.whenItHappens().emit();
 
-          var subscription = eventify.subscribe('global-onetime/whenItHappens', listener);
+          var subscription = eventify.listen('global-onetime/whenItHappens', listener);
 
           expect(listener).not.toHaveBeenCalled();
           expect(subscription.isActive()).toBe(false);
@@ -255,7 +255,7 @@ describe("eventify", function() {
     })
   })
 
-  describe('.emit()', function () {
+  describe('._emit()', function () {
 
     it("calls listeners in the context of the source", function() {
 
@@ -263,18 +263,11 @@ describe("eventify", function() {
         context = this;
       }
 
-      var src = {};
-      eventify.subscribe('in-namespace/onSomeEvent', listener);
+      eventify.listen('./onSomeEvent', listener);
 
-      eventify.emit('in-namespace/onSomeEvent', src);
+      eventify._emit(object.onSomeEvent());
 
-      expect(context).toBe(src);
-    });
-
-    it("throws an error if I try to subscribe to an event without a slash such as 'anEvent'", function() {
-      expect(function () {
-        eventify.send('anEvent', {});
-      }).toThrow();
+      expect(context).toBe(object);
     });
 
     it('passes the arguments along to the listeners', function () {
@@ -283,9 +276,9 @@ describe("eventify", function() {
         args = arguments;
       }
 
-      eventify.subscribe('in-namespace/onSomeEvent', listener);
+      eventify.listen('./onSomeEvent', listener);
 
-      eventify.emit('in-namespace/onSomeEvent', {}, 'hello', 12345, true);
+      eventify._emit(object.onSomeEvent(), ['hello', 12345, true]);
 
       expect(args).toEqual(['hello', 12345, true]);
     });
@@ -296,10 +289,14 @@ describe("eventify", function() {
       var listener = jasmine.createSpy().andCallFake(function (a) {
         arg = a;
       });
+      
+      eventify(object, 'in-a-namespace', function () {
+        this.define('onSomeOtherEvent');
+      });
+      
+      eventify.listen(listener);
 
-      eventify.subscribe(listener);
-
-      eventify.emit('in-a-namespace/onSomeOtherEvent', {}, 1,2,3,4);
+      eventify._emit(object.onSomeOtherEvent(), [1,2,3,4]);
 
       expect(listener).toHaveBeenCalled();
       expect(arg.args).toEqual([1,2,3,4]);
@@ -314,9 +311,9 @@ describe("eventify", function() {
 
       spyOn(object, 'listener').andCallThrough();
 
-      eventify.subscribe(object.listener);
+      eventify.listen(object.listener);
 
-      eventify.emit('./onSomeEvent', {}, 'hello');
+      eventify._emit(object.onSomeEvent(), ['hello']);
 
       expect(object.listener).toHaveBeenCalled();
       expect(arg.args).toEqual(['hello']);
@@ -328,13 +325,13 @@ describe("eventify", function() {
     it("calls global listeners in the context of the source object", function () {
       var context, src = {};
 
-      eventify.subscribe(function () {
+      eventify.listen(function () {
         context = this;
       });
 
-      eventify.emit('./onSomeEvent', src);
+      eventify._emit(object.onSomeEvent());
 
-      expect(context).toBe(src);
+      expect(context).toBe(object);
     })
   });
 });
