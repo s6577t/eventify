@@ -1,8 +1,16 @@
+TODO:
+
+- refactor emit and global emit and oneTimeEvent into one place Event#emit and a global isOneTimeEvent method and flag
+
 DOC:
 
 this is the event source. important because and event should always pass it's source
 
 > update the readme (oneTimeEvent, called on next tick after first)
+
+observer pattern
+
+how it is used in hotleads
 
 -> load eventify into the documentation page so that with the console, documentation can be interactive.
 -> microjs for inspiration
