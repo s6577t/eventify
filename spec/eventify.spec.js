@@ -6,76 +6,135 @@ describe("eventify", function() {
     object = {};
     eventify(object, function () {
       this.define('onSomeEvent');
+      this.define('onSomeOtherEvent');
     });
   });
 
-  describe("defining events through eventify()", function() {
+  describe("eventify()ing an object", function() {
 
+    describe('defining events', function () {
+      it("should allow events to be defined in a configuration function", function() {
 
-    it("should allow events to be defined in a configuration function", function() {
+        eventify(object, function () {
+          this.define('onBoo');
+          this.define('onMangle');
+          this.define('onWhatever');
+        });
 
-      eventify(object, function () {
-        this.define('onBoo');
-        this.define('onMangle');
-        this.define('onWhatever');
+        expect(object['onMangle']()).toBeInstanceOf(eventify.Event);
+        expect(object['onBoo']()).toBeInstanceOf(eventify.Event);
+        expect(object['onWhatever']()).toBeInstanceOf(eventify.Event);
       });
 
-      expect(object['onMangle']()).toBeInstanceOf(eventify.Event);
-      expect(object['onBoo']()).toBeInstanceOf(eventify.Event);
-      expect(object['onWhatever']()).toBeInstanceOf(eventify.Event);
-    });
-
-    it("should allow an event to be defined as a one time event", function() {
-      eventify(object, function () {
-        this.define('onDrag', { oneTimeEvent: true });
-      });
-      expect(object.onDrag()._oneTimeEvent).toBe(true);
-    });
-
-    it('passes the configurationApi as an argument and as the context of the configuration function', function () {
-      var context, arg;
-      eventify({}, function (a) {
-        context = this;
-        arg = a;
+      it("should allow an event to be defined as a one time event", function() {
+        eventify(object, function () {
+          this.define('onDrag', { oneTimeEvent: true });
+        });
+        expect(object.onDrag()._oneTimeEvent).toBe(true);
       });
 
-      expect(arg).toBe(context);
-    });
+      it('passes the configurationApi as an argument and as the context of the configuration function', function () {
+        var context, arg;
+        eventify({}, function (a) {
+          context = this;
+          arg = a;
+        });
 
-    it("returns the eventified object", function() {
-      var obj = {};
-      expect(eventify(obj, function () {})).toBe(obj);
-    });
-
-    it("allows a global event namespace to be defined", function() {
-
-      eventify(object, 'my-namespace', function () {
-        this.define('onSomeEvent');
+        expect(arg).toBe(context);
       });
 
-      expect(object.onSomeEvent().namespace()).toBe('my-namespace');
-    });
-
-    it("allows different events on the same eventified objects to have difference namespaces", function() {
-      eventify(object, 'my-namespace', function () {
-        this.define('onSomeEvent');
+      it("returns the eventified object", function() {
+        var obj = {};
+        expect(eventify(obj, function () {})).toBe(obj);
       });
 
-      expect(object.onSomeEvent().namespace()).toBe('my-namespace');
+      it("allows a global event namespace to be defined", function() {
 
-      eventify(object, 'my-other-namespace', function () {
-        this.define('onSomeOtherEvent');
+        eventify(object, 'my-namespace', function () {
+          this.define('onSomeEvent');
+        });
+
+        expect(object.onSomeEvent().namespace()).toBe('my-namespace');
       });
 
-      expect(object.onSomeOtherEvent().namespace()).toBe('my-other-namespace');
-    });
+      it("allows different events on the same eventified objects to have difference namespaces", function() {
+        eventify(object, 'my-namespace', function () {
+          this.define('onSomeEvent');
+        });
 
-    it("allows namespace to have slashes", function () {
-      eventify(object, 'in/a/slash', function () {
-        this.define('anEvent');
+        expect(object.onSomeEvent().namespace()).toBe('my-namespace');
+
+        eventify(object, 'my-other-namespace', function () {
+          this.define('onSomeOtherEvent');
+        });
+
+        expect(object.onSomeOtherEvent().namespace()).toBe('my-other-namespace');
+      });
+
+      it("allows namespace to have slashes", function () {
+        eventify(object, 'in/a/slash', function () {
+          this.define('anEvent');
+        })
+        expect(object.anEvent().namespace()).toBe('in/a/slash');
+      });
+    })
+    
+    describe('propogating events', function () {
+      
+      var source, propogator;
+
+      beforeEach(function () {
+        source = object;
+        propagated = {};
+
+        eventify(propagated, function () {
+          this.propagate(source.onSomeEvent);
+        });
+
+        eventify(propagated, 'in-a-namespace', function () {
+          this.propagate(source.onSomeOtherEvent);
+        });
+      });
+
+      it('defines an event of the same name as the propagated event but in a potentially different namespace on the eventified object', function () {
+        expect(propagated.onSomeOtherEvent().namespace()).toBe('in-a-namespace');
+      });
+
+      it('emits the propagated event', function () {
+        
+        var listener = jasmine.createSpy('listener');
+        propagated.onSomeEvent(listener);
+        source.onSomeEvent().emit();
+        expect(listener).toHaveBeenCalled();
+      });
+
+      it('removes cancels the subscription to the original event when a propagated event subscription is cancelled', function () {
+        
+        var subs = propagated.onSomeEvent(function () {});
+        
+        var originalSourceListenerCount = source.onSomeEvent().subscriptions().count();
+
+        subs.cancel();
+
+        expect(source.onSomeEvent().subscriptions().count()).toBe(originalSourceListenerCount - 1);
+      });
+
+      it('can be passed an eventify.Event or a function with a _returnsAnEventifyEvent member', function () {
+        
+        eventify(source, function () {
+          this.define('onWithEvent');
+          this.define('onWithFunction');
+        });
+
+        eventify(propagated, function () {
+          this.propagate(source.onWithEvent());
+          this.propagate(source.onWithFunction);
+        });
+
+        expect(propagated.onWithEvent()).toBeInstanceOf(eventify.Event);
+        expect(propagated.onWithFunction()).toBeInstanceOf(eventify.Event);
       })
-      expect(object.anEvent().namespace()).toBe('in/a/slash');
-    });
+    })
   });
 
   describe("members of the eventified object defined through eventify", function() {

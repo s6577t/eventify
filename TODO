@@ -1,6 +1,4 @@
-TODO:
-
-- refactor emit and global emit and oneTimeEvent into one place Event#emit and a global isOneTimeEvent method and flag
+-> porogate
 
 DOC:
 

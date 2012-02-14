@@ -2,12 +2,13 @@ eventify.Event = (function () {
 
   function Event (options) {
 
-    this._source        = options.source;
-    this._name          = options.eventName;
-    this._namespace     = options.namespace;
-    this._hasOccurred   = false;
-    this._oneTimeEvent  = !! options.oneTimeEvent;
-    this._subscriptions = new eventify.EventSubscriptions;
+    this._source                        = options.source;
+    this._name                          = options.eventName;
+    this._namespace                     = options.namespace;
+    this._hasOccurred                   = false;
+    this._oneTimeEvent                  = !! options.oneTimeEvent;
+    this._subscriptions                 = new eventify.EventSubscriptions;
+    this._subscriptionToPropagatedEvent = options.subscriptionToPropagatedEvent
   };
 
   Event.prototype = {
@@ -27,6 +28,7 @@ eventify.Event = (function () {
         eventListener: eventListener
       , cancel: cancel
       , subscriptions: self.subscriptions()
+      , subscriptionToPropagatedEvent: self._subscriptionToPropagatedEvent
       });
     }
   , name: function () {

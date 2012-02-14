@@ -64,6 +64,18 @@
 
        return this;
      }
+   , propagate: function (functionOrEvent) {
+       var e = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
+      
+       var subs = e._listen(function () {
+         var propagation = source[e.name()]();
+         propagation.emit.apply(source, arguments);
+       });
+
+       var propagatedEvent = this.define(e.name(), {
+         subscriptionToPropagatedEvent: subs
+       });
+     }
    };
 
    if (typeof configure === 'function') {
@@ -243,38 +255,17 @@ eventify.cancelAllSubscriptionsOn = function (object) {
     catchAllSubscriptions._callAll(source, [catchallArg]);
   }
 
-})();;eventify.nullTracer = {
-  trace: function () {}
-, info:  function () {}
-}
-
-eventify.trace = function () {
-
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    eventify._trace.info(arguments[i]);
-  }
-  eventify._trace.trace();
-}
-
-eventify.enableTracing = function (optionalOutput) {
-  var c = optionalOutput || console;
-  eventify._trace = c;
-}
-
-eventify.disableTracing = function () {
-  eventify.enableTracing(eventify.nullTracer);
-}
-
-eventify.disableTracing();;eventify.Event = (function () {
+})();;eventify.Event = (function () {
 
   function Event (options) {
 
-    this._source        = options.source;
-    this._name          = options.eventName;
-    this._namespace     = options.namespace;
-    this._hasOccurred   = false;
-    this._oneTimeEvent  = !! options.oneTimeEvent;
-    this._subscriptions = new eventify.EventSubscriptions;
+    this._source                        = options.source;
+    this._name                          = options.eventName;
+    this._namespace                     = options.namespace;
+    this._hasOccurred                   = false;
+    this._oneTimeEvent                  = !! options.oneTimeEvent;
+    this._subscriptions                 = new eventify.EventSubscriptions;
+    this._subscriptionToPropagatedEvent = options.subscriptionToPropagatedEvent
   };
 
   Event.prototype = {
@@ -294,6 +285,7 @@ eventify.disableTracing();;eventify.Event = (function () {
         eventListener: eventListener
       , cancel: cancel
       , subscriptions: self.subscriptions()
+      , subscriptionToPropagatedEvent: self._subscriptionToPropagatedEvent
       });
     }
   , name: function () {
@@ -312,7 +304,7 @@ eventify.disableTracing();;eventify.Event = (function () {
       return this._subscriptions;
     }
   , emit: function () {
-
+    
       var self      = this
         , source    = this._source;
 
@@ -446,10 +438,11 @@ eventify.disableTracing();;eventify.Event = (function () {
 
   function EventSubscription (args) {
 
-    this._active        = true;
-    this._eventListener = args.eventListener;
-    this._subscriptions = args.subscriptions;
-    
+    this._active                        = true;
+    this._eventListener                 = args.eventListener;
+    this._subscriptions                 = args.subscriptions;
+    this._subscriptionToPropagatedEvent = args.subscriptionToPropagatedEvent;
+
     if (args.cancel) {
       this._active = false;
     } else {
@@ -463,6 +456,11 @@ eventify.disableTracing();;eventify.Event = (function () {
       if (this.isActive()) {
         this._active = false;
         this._subscriptions._remove(this);
+
+        if (this._subscriptionToPropagatedEvent) {
+          this._subscriptionToPropagatedEvent.cancel();
+        }
+
         return true;
       }
 
