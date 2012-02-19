@@ -65,12 +65,14 @@
        return this;
      }
    , propagate: function (functionOrEvent) {
-       var e = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
+      var e = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
       
-       var subs = e._listen(function () {
-         var propagation = source[e.name()]();
-         propagation.emit.apply(source, arguments);
-       });
+      var subs = e._listen({
+        listener: function () {
+          var propagation = source[e.name()]();
+          propagation.emit.apply(propagation, arguments);
+        }
+      });
 
        var propagatedEvent = this.define(e.name(), {
          subscriptionToPropagatedEvent: subs
