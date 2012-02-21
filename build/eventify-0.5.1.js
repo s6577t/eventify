@@ -28,6 +28,13 @@
       configure = arguments[1];
     }
 
+    if (namespace) {
+      if ('eventifyNamespace' in source) {
+        throw new Error('object already has a namespace: ' + namespace)
+      }
+      source.eventifyNamespace = namespace;
+    }
+
    function installEvent (options) {
 
       var _event = new eventify.Event(options);
@@ -58,7 +65,6 @@
 
        options.source    = source;
        options.eventName = eventName;
-       options.namespace = namespace
 
        installEvent(options);
 
@@ -263,7 +269,6 @@ eventify.cancelAllSubscriptionsOn = function (object) {
 
     this._source                        = options.source;
     this._name                          = options.eventName;
-    this._namespace                     = options.namespace;
     this._hasOccurred                   = false;
     this._oneTimeEvent                  = !! options.oneTimeEvent;
     this._subscriptions                 = new eventify.EventSubscriptions;
@@ -294,7 +299,7 @@ eventify.cancelAllSubscriptionsOn = function (object) {
       return this._name;
     }
   , namespace: function () {
-      return this._namespace || '.';
+      return this._source.eventifyNamespace || '.';
     }
   , fullName: function () {
       return this.namespace() + '/' + this.name();
