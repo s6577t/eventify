@@ -5,12 +5,9 @@ describe("eventify.Event", function() {
   beforeEach(function () {
     object = {};
 
-    eventify(object, function () {
+    eventify(object, 'in-a-namespace', function () {      
       this.define('onSomeEvent');
       this.define('onOneTime', { oneTimeEvent: true });
-    });
-
-    eventify(object, 'in-a-namespace', function () {
       this.define('onSomeOtherEvent');
     });
   });
@@ -44,17 +41,30 @@ describe("eventify.Event", function() {
   });
 
   describe("#namespace()", function() {
-    it("returns the event namespace if defined", function() {
-
-      eventify(object, 'in-a-namespace', function () {
-        this.define('beforeSomethingHappens')
-      });
-
-      expect(object.beforeSomethingHappens().namespace()).toBe('in-a-namespace');
+    it("returns the event namespace from the source if defined", function() {
+      expect(object.onSomeOtherEvent().namespace()).toBe('in-a-namespace');
     });
 
-    it("returns '.' if the event has no namespace", function() {
-      expect(object.onSomeEvent().namespace()).toBe('.');
+    it("returns '.' if the event source has no namespace", function() {
+      
+      var obj = {};
+      eventify(obj, function () {
+        this.define('onBoom');
+      });
+
+      expect(obj.onBoom().namespace()).toBe('.');
+    });
+
+    it('can use an eventifyNamespace member defined by the user', function () {
+      
+      var obj = {};
+      
+      eventify(obj, function () {
+        this.define('onSomeOccurence');
+      });
+
+      obj.eventifyNamespace = 'hello-namespace';
+      expect(obj.onSomeOccurence().namespace()).toBe('hello-namespace');
     });
   });
 
@@ -89,6 +99,7 @@ describe("eventify.Event", function() {
     });
 
     it("returns true if the event is emitted", function() {
+      
       expect(object.onSomeEvent().emit()).toBe(true);
     });
 
@@ -148,7 +159,7 @@ describe("eventify.Event", function() {
       it("does not call global event listeners after the first emission", function () {
         var count = 0;
 
-        eventify.listen('./onOneTime', function () {
+        eventify.listen('in-a-namespace/onOneTime', function () {
           count++;
         });
 
@@ -190,7 +201,7 @@ describe("eventify.Event", function() {
       it("calls the unnamespaced onSomeEvent in ./onSomeEvent", function() {
 
         spyOn(object, 'listener');
-        eventify.listen('./onSomeEvent', object.listener);
+        eventify.listen('in-a-namespace/onSomeEvent', object.listener);
 
         object.onSomeEvent().emit();
 
@@ -237,7 +248,7 @@ describe("eventify.Event", function() {
 
         expect(object.listener).toHaveBeenCalled();
         expect(arg.args).toEqual(['hello']);
-        expect(arg.namespace).toEqual('.');
+        expect(arg.namespace).toEqual('in-a-namespace');
         expect(arg.eventName).toEqual('onSomeEvent');
 
       });

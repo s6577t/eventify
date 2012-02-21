@@ -4,7 +4,6 @@ eventify.Event = (function () {
 
     this._source                        = options.source;
     this._name                          = options.eventName;
-    this._namespace                     = options.namespace;
     this._hasOccurred                   = false;
     this._oneTimeEvent                  = !! options.oneTimeEvent;
     this._subscriptions                 = new eventify.EventSubscriptions;
@@ -35,7 +34,7 @@ eventify.Event = (function () {
       return this._name;
     }
   , namespace: function () {
-      return this._namespace || '.';
+      return this._source.eventifyNamespace || '.';
     }
   , fullName: function () {
       return this.namespace() + '/' + this.name();

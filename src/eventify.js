@@ -9,6 +9,13 @@ function eventify(source) {
       configure = arguments[1];
     }
 
+    if (namespace) {
+      if ('eventifyNamespace' in source) {
+        throw new Error('object already has a namespace: ' + namespace)
+      }
+      source.eventifyNamespace = namespace;
+    }
+
    function installEvent (options) {
 
       var _event = new eventify.Event(options);
@@ -39,7 +46,6 @@ function eventify(source) {
 
        options.source    = source;
        options.eventName = eventName;
-       options.namespace = namespace
 
        installEvent(options);
 

@@ -1,4 +1,3 @@
--> porogate
 
 DOC:
 
@@ -6,9 +5,11 @@ this is the event source. important because and event should always pass it's so
 
 > update the readme (oneTimeEvent, called on next tick after first)
 
+Add a note to the readme for what will happen if you eventify a prototype: you get a class-like event where there is ONE listener collection emitting results in all listeners to all objects being called. Probably not useful behaviour.
+
 observer pattern
 
-how it is used in hotleads
+how it is used in hotleads to make the code de coupled and simple
 
 -> load eventify into the documentation page so that with the console, documentation can be interactive.
 -> microjs for inspiration

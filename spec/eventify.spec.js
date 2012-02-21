@@ -57,18 +57,27 @@ describe("eventify", function() {
         expect(object.onSomeEvent().namespace()).toBe('my-namespace');
       });
 
-      it("allows different events on the same eventified objects to have difference namespaces", function() {
+      it("throws an error if a namespace is specified multiple times", function() {
+        
         eventify(object, 'my-namespace', function () {
           this.define('onSomeEvent');
         });
 
         expect(object.onSomeEvent().namespace()).toBe('my-namespace');
 
-        eventify(object, 'my-other-namespace', function () {
-          this.define('onSomeOtherEvent');
-        });
+        expect(function () {
+          eventify(object, 'my-other-namespace', function () {
+            this.define('onSomeOtherEvent');
+          });
+        }).toThrow('object already has a namespace: ' + 'my-other-namespace');
+      });
 
-        expect(object.onSomeOtherEvent().namespace()).toBe('my-other-namespace');
+      it('creates an eventifyNamespace member on the object if a namespace is specified', function () {
+        var obj = {}
+        eventify(obj, 'namespace1', function () {
+          this.define('onSomeOccurrence');
+        });
+        expect(obj.eventifyNamespace).toEqual('namespace1');
       });
 
       it("allows namespace to have slashes", function () {
@@ -376,9 +385,8 @@ describe("eventify", function() {
 
       expect(object.listener).toHaveBeenCalled();
       expect(arg.args).toEqual(['hello']);
-      expect(arg.namespace).toEqual('.');
+      expect(arg.namespace).toEqual('in-a-namespace');
       expect(arg.eventName).toEqual('onSomeEvent');
-
     });
 
     it("calls global listeners in the context of the source object", function () {
