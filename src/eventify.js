@@ -20,6 +20,10 @@ function eventify(source) {
 
       var _event = new eventify.Event(options);
 
+      if (options.eventName in source) {
+        throw new Error('"'+ options.eventName +'" is already defined');
+      }
+
       // assign the event listener registration function to the specified name
       source[options.eventName] = function(listener) {
 
@@ -51,27 +55,31 @@ function eventify(source) {
 
        return this;
      }
-   , propagate: function (functionOrEvent) {
-      var e = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
+   , pipe: function (functionOrEvent) {
       
-      var subs = e._listen({
+      var evt = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
+      
+      var subs = evt._listen({
         listener: function () {
-          var propagation = source[e.name()]();
+          var propagation = source[evt.name()]();
           propagation.emit.apply(propagation, arguments);
         }
       });
 
-       var propagatedEvent = this.define(e.name(), {
-         subscriptionToPropagatedEvent: subs
-       });
+      var sourceMember = source[evt.name()];
+
+      if (!(typeof sourceMember === 'function' && sourceMember._returnsAnEventifyEvent)) {
+        this.define(evt.name());
+      }
      }
    };
 
-   if (typeof configure === 'function') {
-     configure.call(configurationApi, configurationApi);
-   }
+  if (typeof configure !== 'undefined') { 
+    // assume it is a function
+    configure.call(configurationApi, configurationApi);
+  }
 
-   return source;
+  return source;
 }
 
 eventify.cancelAllSubscriptionsOn = function (object) {

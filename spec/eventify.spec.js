@@ -51,16 +51,16 @@ describe("eventify", function() {
       it("allows a global event namespace to be defined", function() {
 
         eventify(object, 'my-namespace', function () {
-          this.define('onSomeEvent');
+          this.define('onAnotherEvent');
         });
 
-        expect(object.onSomeEvent().namespace()).toBe('my-namespace');
+        expect(object.onAnotherEvent().namespace()).toBe('my-namespace');
       });
 
       it("throws an error if a namespace is specified multiple times", function() {
         
         eventify(object, 'my-namespace', function () {
-          this.define('onSomeEvent');
+          this.define('onAnotherEvent');
         });
 
         expect(object.onSomeEvent().namespace()).toBe('my-namespace');
@@ -86,46 +86,74 @@ describe("eventify", function() {
         })
         expect(object.anEvent().namespace()).toBe('in/a/slash');
       });
+
+      it('throws an error if a member of the name is already defined', function () {
+        
+        object = { onExisting: 'hello' };
+
+        expect(function () {
+          
+          eventify(object, function () {
+            this.define('onExisting');
+          });
+
+        }).toThrow('"onExisting" is already defined');
+      });
     })
     
-    describe('propogating events', function () {
+    describe('piping events', function () {
       
-      var source, propogator;
+      var source, piper;
 
       beforeEach(function () {
         source = object;
-        propagated = {};
+        piped = {};
 
-        eventify(propagated, function () {
-          this.propagate(source.onSomeEvent);
+        eventify(piped, function () {
+          this.pipe(source.onSomeEvent);
         });
 
-        eventify(propagated, 'in-a-namespace', function () {
-          this.propagate(source.onSomeOtherEvent);
+        eventify(piped, 'in-a-namespace', function () {
+          this.pipe(source.onSomeOtherEvent);
         });
       });
 
-      it('defines an event of the same name as the propagated event but in a potentially different namespace on the eventified object', function () {
-        expect(propagated.onSomeOtherEvent().namespace()).toBe('in-a-namespace');
+      it('defines an event of the same name as the piped event, possibly in different namespace on the eventified object', function () {
+        expect(piped.onSomeOtherEvent().namespace()).toBe('in-a-namespace');
       });
 
-      it('emits the propagated event', function () {
+      it('does not redefine the event', function () {
+        var obj = {};
+
+        eventify(obj, function () {
+          this.define('onSomeEvent');
+        });
+
+        var em = obj.onSomeEvent();
+
+        eventify(obj, function () {
+          this.pipe(source.onSomeEvent);
+        });
+
+        expect(obj.onSomeEvent()).toBe(em);
+      });
+
+      it('throws an error if the piped event name already exists but is not an eventify event', function () {
+        var obj = {onSomeEvent: 123};
+
+        expect(function () {
+          eventify(obj, function () {
+            this.pipe(source.onSomeEvent);
+          });
+        }).toThrow('"onSomeEvent" is already defined');
+      });
+
+      it('emits the piped event', function () {
         
         var listener = jasmine.createSpy('listener');
-        propagated.onSomeEvent(listener);
+        piped.onSomeEvent(listener);
         source.onSomeEvent().emit();
         expect(listener).toHaveBeenCalled();
-      });
-
-      it('removes cancels the subscription to the original event when a propagated event subscription is cancelled', function () {
-        
-        var subs = propagated.onSomeEvent(function () {});
-        
-        var originalSourceListenerCount = source.onSomeEvent().subscriptions().count();
-
-        subs.cancel();
-
-        expect(source.onSomeEvent().subscriptions().count()).toBe(originalSourceListenerCount - 1);
       });
 
       it('can be passed an eventify.Event or a function with a _returnsAnEventifyEvent member', function () {
@@ -135,13 +163,13 @@ describe("eventify", function() {
           this.define('onWithFunction');
         });
 
-        eventify(propagated, function () {
-          this.propagate(source.onWithEvent());
-          this.propagate(source.onWithFunction);
+        eventify(piped, function () {
+          this.pipe(source.onWithEvent());
+          this.pipe(source.onWithFunction);
         });
 
-        expect(propagated.onWithEvent()).toBeInstanceOf(eventify.Event);
-        expect(propagated.onWithFunction()).toBeInstanceOf(eventify.Event);
+        expect(piped.onWithEvent()).toBeInstanceOf(eventify.Event);
+        expect(piped.onWithFunction()).toBeInstanceOf(eventify.Event);
       })
     })
   });
@@ -157,15 +185,15 @@ describe("eventify", function() {
       it("returns the eventify.Event when not passing a function to the event", function () {
 
         eventify(object, function () {
-          this.define('onSomeEvent')
+          this.define('onAnotherEvent')
         });
 
-        expect(object.onSomeEvent('string')).toBeInstanceOf(eventify.Event);
-        expect(object.onSomeEvent({})).toBeInstanceOf(eventify.Event);
-        expect(object.onSomeEvent([])).toBeInstanceOf(eventify.Event);
-        expect(object.onSomeEvent(12345)).toBeInstanceOf(eventify.Event);
-        expect(object.onSomeEvent(true)).toBeInstanceOf(eventify.Event);
-        expect(object.onSomeEvent(false)).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent('string')).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent({})).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent([])).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent(12345)).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent(true)).toBeInstanceOf(eventify.Event);
+        expect(object.onAnotherEvent(false)).toBeInstanceOf(eventify.Event);
       })
     });
   });
@@ -359,17 +387,17 @@ describe("eventify", function() {
       });
       
       eventify(object, 'in-a-namespace', function () {
-        this.define('onSomeOtherEvent');
+        this.define('onAnotherEvent');
       });
       
       eventify.listen(listener);
 
-      eventify._emit(object.onSomeOtherEvent(), [1,2,3,4]);
+      eventify._emit(object.onAnotherEvent(), [1,2,3,4]);
 
       expect(listener).toHaveBeenCalled();
       expect(arg.args).toEqual([1,2,3,4]);
       expect(arg.namespace).toEqual('in-a-namespace');
-      expect(arg.eventName).toEqual('onSomeOtherEvent');
+      expect(arg.eventName).toEqual('onAnotherEvent');
 
       // spec again with an unnamespaced event
 

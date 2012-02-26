@@ -39,6 +39,10 @@
 
       var _event = new eventify.Event(options);
 
+      if (options.eventName in source) {
+        throw new Error('"'+ options.eventName +'" is already defined');
+      }
+
       // assign the event listener registration function to the specified name
       source[options.eventName] = function(listener) {
 
@@ -71,26 +75,30 @@
        return this;
      }
    , pipe: function (functionOrEvent) {
-      var e = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
       
-      var subs = e._listen({
+      var evt = functionOrEvent._returnsAnEventifyEvent ? functionOrEvent() : functionOrEvent;
+      
+      var subs = evt._listen({
         listener: function () {
-          var propagation = source[e.name()]();
+          var propagation = source[evt.name()]();
           propagation.emit.apply(propagation, arguments);
         }
       });
 
-       var pipedEvent = this.define(e.name(), {
-         subscriptionToPipedEvent: subs
-       });
+      var sourceMember = source[evt.name()];
+
+      if (!(typeof sourceMember === 'function' && sourceMember._returnsAnEventifyEvent)) {
+        this.define(evt.name());
+      }
      }
    };
 
-   if (typeof configure === 'function') {
-     configure.call(configurationApi, configurationApi);
-   }
+  if (typeof configure !== 'undefined') { 
+    // assume it is a function
+    configure.call(configurationApi, configurationApi);
+  }
 
-   return source;
+  return source;
 }
 
 eventify.cancelAllSubscriptionsOn = function (object) {
@@ -267,12 +275,11 @@ eventify.cancelAllSubscriptionsOn = function (object) {
 
   function Event (options) {
 
-    this._source                        = options.source;
-    this._name                          = options.eventName;
-    this._hasOccurred                   = false;
-    this._oneTimeEvent                  = !! options.oneTimeEvent;
-    this._subscriptions                 = new eventify.EventSubscriptions;
-    this._subscriptionToPipedEvent = options.subscriptionToPipedEvent
+    this._source        = options.source;
+    this._name          = options.eventName;
+    this._hasOccurred   = false;
+    this._oneTimeEvent  = !! options.oneTimeEvent;
+    this._subscriptions = new eventify.EventSubscriptions;
   };
 
   Event.prototype = {
@@ -292,7 +299,6 @@ eventify.cancelAllSubscriptionsOn = function (object) {
         eventListener: eventListener
       , cancel: cancel
       , subscriptions: self.subscriptions()
-      , subscriptionToPipedEvent: self._subscriptionToPipedEvent
       });
     }
   , name: function () {
@@ -448,7 +454,6 @@ eventify.cancelAllSubscriptionsOn = function (object) {
     this._active                        = true;
     this._eventListener                 = args.eventListener;
     this._subscriptions                 = args.subscriptions;
-    this._subscriptionToPipedEvent = args.subscriptionToPipedEvent;
 
     if (args.cancel) {
       this._active = false;
@@ -463,10 +468,6 @@ eventify.cancelAllSubscriptionsOn = function (object) {
       if (this.isActive()) {
         this._active = false;
         this._subscriptions._remove(this);
-
-        if (this._subscriptionToPipedEvent) {
-          this._subscriptionToPipedEvent.cancel();
-        }
 
         return true;
       }
