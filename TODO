@@ -1,5 +1,21 @@
+function MyCtor () {
+	eventify(this[, namespace], function () {});
+
+	this.eventify.namespace();
+	this.eventify.events(function (name, eventify.Event) { ... });
+	this.eventify.cancelAllEventSubscriptions();
+}
+
 
 DOC:
+
+in backbone you do this: 
+		thyself.model.bind('reset', 'render', thyself);
+which sucks.
+
+
+
+
 
 this is the event source. important because and event should always pass it's source
 

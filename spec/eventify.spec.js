@@ -77,7 +77,7 @@ describe("eventify", function() {
         eventify(obj, 'namespace1', function () {
           this.define('onSomeOccurrence');
         });
-        expect(obj.eventifyNamespace).toEqual('namespace1');
+        expect(obj.eventify.namespace()).toEqual('namespace1');
       });
 
       it("allows namespace to have slashes", function () {
@@ -99,7 +99,7 @@ describe("eventify", function() {
 
         }).toThrow('"onExisting" is already defined');
       });
-    })
+    });
     
     describe('piping events', function () {
       
@@ -171,7 +171,7 @@ describe("eventify", function() {
         expect(piped.onWithEvent()).toBeInstanceOf(eventify.Event);
         expect(piped.onWithFunction()).toBeInstanceOf(eventify.Event);
       })
-    })
+    });
   });
 
   describe("members of the eventified object defined through eventify", function() {
@@ -198,39 +198,56 @@ describe("eventify", function() {
     });
   });
 
-  describe('.cancelAllSubscriptionsOn()', function () {
+  describe('eventify mixin', function () {
 
-    it ('should not get a type error for null members', function () {
-      object.nil = null;
+    describe('.namespace', function () {
 
-      expect(function () {
-        eventify.cancelAllSubscriptionsOn(object);
-      }).not.toThrow();
-    });
-
-    it('should remove all listeners for events installed by events', function () {
-      eventify(object, function () {
-        this.define('onDo');
-        this.define('onDont');
+      it('be the namespace', function () {
+        eventify(object, 'my-ns');
+        expect(object.eventify.namespace()).toBe('my-ns');
       });
-      eventify.cancelAllSubscriptionsOn(object);
-      expect(object.onDo().subscriptions().count()).toEqual(0);
-      expect(object.onDont().subscriptions().count()).toEqual(0);
     });
 
-    it("should leave all events on the object", function() {
-      eventify(object, function () {
-        this.define('onDo');
-        this.define('onDont');
+    describe('.events', function () {
+      it('return an array of through the events', function () {
+        expect(object.eventify.events()).toEqual([object.onSomeEvent(), object.onSomeOtherEvent()]);
+      })
+    });
+
+    describe('.cancelAllSubscriptions()', function () {
+
+      it ('should not get a type error for null members', function () {
+        object.nil = null;
+
+        expect(function () {
+          object.eventify.cancelAllSubscriptions(object);
+        }).not.toThrow();
       });
-      eventify.cancelAllSubscriptionsOn(object);
-      expect(object.onDo).not.toBeUndefined();
-      expect(object.onDont).not.toBeUndefined();
-    });
 
-    it('should return the deventified object', function () {
-      expect(eventify.cancelAllSubscriptionsOn(object)).toBe(object);
-    })
+      it('should remove all listeners for events installed by events', function () {
+        eventify(object, function () {
+          this.define('onDo');
+          this.define('onDont');
+        });
+        object.eventify.cancelAllSubscriptions(object);
+        expect(object.onDo().subscriptions().count()).toEqual(0);
+        expect(object.onDont().subscriptions().count()).toEqual(0);
+      });
+
+      it("should leave all events on the object", function() {
+        eventify(object, function () {
+          this.define('onDo');
+          this.define('onDont');
+        });
+        object.eventify.cancelAllSubscriptions(object);
+        expect(object.onDo).not.toBeUndefined();
+        expect(object.onDont).not.toBeUndefined();
+      });
+
+      it('should return the deventified object', function () {
+        expect(object.eventify.cancelAllSubscriptions(object)).toBe(object);
+      })
+    });
   });
 
   describe('.listen()', function () {

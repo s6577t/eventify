@@ -55,7 +55,7 @@ describe("eventify.Event", function() {
       expect(obj.onBoom().namespace()).toBe('.');
     });
 
-    it('can use an eventifyNamespace member defined by the user', function () {
+    it('can use an eventify.namespace() member defined by the user', function () {
       
       var obj = {};
       
@@ -63,7 +63,7 @@ describe("eventify.Event", function() {
         this.define('onSomeOccurence');
       });
 
-      obj.eventifyNamespace = 'hello-namespace';
+      eventify(obj, 'hello-namespace');
       expect(obj.onSomeOccurence().namespace()).toBe('hello-namespace');
     });
   });
@@ -268,6 +268,14 @@ describe("eventify.Event", function() {
     });
   });
 
+  describe('#emitWithArgs', function () {
+    it('calls emit with the specified arguments', function () {
+      spyOn(object.onSomeEvent(), 'emit');
+      object.onSomeEvent().emitWithArgs([1,2,3,4]);
+      expect(object.onSomeEvent().emit).toHaveBeenCalledWith(1,2,3,4);
+    });
+  });
+
   describe("#emitOnNextTick()", function() {
     it("emits the event on the next tick", function() {
 
@@ -287,6 +295,14 @@ describe("eventify.Event", function() {
         expect(object.listener1).toHaveBeenCalled();
         expect(args).toEqual('hello world');
       });
+    });
+  });
+
+  describe('#emitWithArgsOnNextTick', function () {
+    it('calls emitOnNextTick with the specified arguments', function () {
+      spyOn(object.onSomeEvent(), 'emitOnNextTick');
+      object.onSomeEvent().emitWithArgsOnNextTick([1,2,3,4]);
+      expect(object.onSomeEvent().emitOnNextTick).toHaveBeenCalledWith(1,2,3,4);
     });
   });
 

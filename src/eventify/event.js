@@ -32,7 +32,7 @@ eventify.Event = (function () {
       return this._name;
     }
   , namespace: function () {
-      return this._source.eventifyNamespace || '.';
+      return this._source.eventify.namespace();
     }
   , fullName: function () {
       return this.namespace() + '/' + this.name();
@@ -66,6 +66,9 @@ eventify.Event = (function () {
 
       return true;
     }
+  , emitWithArgs: function (args) {
+      this.emit.apply(this, args);
+    }
   , emitOnNextTick: function () {
 
       var self = this
@@ -74,6 +77,9 @@ eventify.Event = (function () {
       return setTimeout(function () {
         self.emit.apply(self, args);
       }, 0);
+    }
+  , emitWithArgsOnNextTick  : function (args) {
+      this.emitOnNextTick.apply(this, args);
     }
   , withInterval: function (callInterval, listener) {
       return this._listen({
