@@ -1,25 +1,36 @@
-function MyCtor () {
-	eventify(this[, namespace], function () {});
+X  -> './onSomeEvent'
+[] -> impl new_api
+[] -> consider using object.js
+[] -> __NAME__
+[] -> emit like this.emit.onSomeEvent(), this.events.define|single|pipe|cancelAllSubscriptions|toArray|namespace
 
-	this.eventify.namespace();
-	this.eventify.events(function (name, eventify.Event) { ... });
-	this.eventify.cancelAllEventSubscriptions();
+
+!! search for xdescribe and xit
+!! what does emit do it I re-emit a 'single' event
+
+
+function MyCtor () {
+  eventify(this[, namespace], function () {});
+
+  this.eventify.namespace();
+  this.eventify.events(function (name, eventify.Event) { ... });
+  this.eventify.cancelAllSubscriptions();
 }
 
 
 DOC:
 
 in backbone you do this: 
-		thyself.model.bind('reset', 'render', thyself);
+    thyself.model.bind('reset', 'render', thyself);
 which sucks.
 
 
-
+-> detail what happens when globally listening to a single-event
 
 
 this is the event source. important because and event should always pass it's source
 
-> update the readme (oneTimeEvent, called on next tick after first)
+> update the readme (single, called on next tick after first)
 
 Add a note to the readme for what will happen if you eventify a prototype: you get a class-like event where there is ONE listener collection emitting results in all listeners to all objects being called. Probably not useful behaviour.
 
@@ -31,4 +42,4 @@ how it is used in hotleads to make the code de coupled and simple
 -> microjs for inspiration
 -> documenting usage: there are many ways to bind/unbind. document ONE api and prefix the rest of the functions with a '_' ???
 -> doc: tagged errors
--> doc: EventSubscription EventListener and Event are NOT intended for instantiation outside of this library
+-> doc: Subscription EventListener and Event are NOT intended for instantiation outside of this library

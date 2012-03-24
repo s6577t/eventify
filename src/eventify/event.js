@@ -2,65 +2,56 @@ eventify.Event = (function () {
 
   function Event (options) {
 
-    this._source        = options.source;
-    this._name          = options.eventName;
-    this._hasOccurred   = false;
-    this._oneTimeEvent  = !! options.oneTimeEvent;
-    this._subscriptions = new eventify.EventSubscriptions;
+    this.___source__        = options.source;
+    this.___name__          = options.eventName;
+    this.___hasOccurred__   = false;
+    this.___single__        = !! options.single;
+    this.___subscriptions__ = new eventify.Subscriptions;
   };
 
   Event.prototype = {
-    _listen: function (args) {
+    __listen__: function (args) {
       var self = this;
 
       var eventListener = new eventify.EventListener(args);
 
       var cancel = false;
 
-      if (self.isOneTimeEvent() && self.hasOccurred()) {
-        eventListener._callOnNextTick(self.source, self._stashedOneTimeEventArgs);
+      if (self.isSingleEvent() && self.hasOccurred()) {
+        eventListener.___callOnNextTick__(self.source, self.___stashedSingleArgs__);
         cancel = true;
       }
 
-      return new eventify.EventSubscription({
+      return new eventify.Subscription({
         eventListener: eventListener
       , cancel: cancel
       , subscriptions: self.subscriptions()
       });
     }
-  , name: function () {
-      return this._name;
-    }
-  , namespace: function () {
-      return this._source.eventify.namespace();
-    }
-  , fullName: function () {
-      return this.namespace() + '/' + this.name();
-    }
-  , source: function () {
-      return this._source;
+  , eventName: function (options) {
+      return this.___name__;
     }
   , subscriptions: function () {
-      return this._subscriptions;
+      return this.___subscriptions__;
     }
   , emit: function () {
     
       var self      = this
-        , source    = this._source;
+        , source    = this.___source__;
 
-      if (self.isOneTimeEvent()) {
+      if (self.isSingle()) {
         if (self.hasOccurred()) {
           return false;
         }
-        self._stashedOneTimeEventArgs = arguments;
+        self.___stashedSingleArgs__ = arguments;
       }
 
-      self._hasOccurred = true;
+      self.___hasOccurred__ = true;
 
-      self.subscriptions()._callAll(source, arguments);
-      eventify._emit(self, arguments);
+      self.subscriptions().___callAll__(source, arguments);
+      eventify.___emit__(self, arguments);
 
-      if (self.isOneTimeEvent()) {
+      if (self.isSingle()) {
         self.subscriptions().cancelAll();
       }
 
@@ -81,26 +72,11 @@ eventify.Event = (function () {
   , emitWithArgsOnNextTick  : function (args) {
       this.emitOnNextTick.apply(this, args);
     }
-  , withInterval: function (callInterval, listener) {
-      return this._listen({
-        listener: listener
-      , callInterval: callInterval
-      });
-    }
-  , once: function (listener) {
-      return this.nTimes(1, listener)
-    }
-  , nTimes: function (n, listener) {
-      return this._listen({
-        listener: listener
-      , maxCallCount: n
-      });
-    }
-  , isOneTimeEvent: function () {
-      return !!this._oneTimeEvent;
+  , isSingleEvent: function () {
+      return !!this.___single__;
     }
   , hasOccurred: function () {
-      return !!this._hasOccurred;
+      return !!this.___hasOccurred__;
     }
   };
 
