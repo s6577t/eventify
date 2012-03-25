@@ -16,6 +16,9 @@ beforeEach(function() {
     },
     toBeEmpty: function () {
       return this.actual.isEmpty();
+    },
+    toBeAnEventifyEvent: function () {
+      return this.actual.__isEventifyEvent__;
     }
   });
 });

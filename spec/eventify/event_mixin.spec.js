@@ -31,6 +31,16 @@ describe('eventify.EventMixin', function () {
         expect(subs.isActive()).toBe(false);
       })
     });
+
+    it('allows an object and function name to be specified', function () {
+
+      var listener = jasmine.createSpy();
+
+      obj.onSomeEvent({ listener: listener }, 'listener');
+      obj.onSomeEvent.emit();
+
+      expect(listener).toHaveBeenCalled();
+    });
   });
 
   describe("subscriptions()", function() {
@@ -98,8 +108,8 @@ describe('eventify.EventMixin', function () {
       expect(obj.onSomeEvent.emit()).toBe(true);
     });
 
-    it('calls listeners in their context of the event source', function () {
-
+    it('calls listeners in the context specified', function () {
+  
       var context = null;
       var eventHandler = {
         onSomeEvent: function () {
@@ -107,10 +117,10 @@ describe('eventify.EventMixin', function () {
         }
       };
 
-      obj.onSomeEvent(eventHandler.onSomeEvent);
+      obj.onSomeEvent(eventHandler, 'onSomeEvent');
       obj.onSomeEvent.emit();
 
-      expect(context).toBe(obj);
+      expect(context).toBe(eventHandler);
     });
 
     describe("when the event is a single event", function() {

@@ -26,11 +26,11 @@ describe('eventify.EventsMixin', function () {
       eventify(obj).define('onClick', 'onClose', 'onWhatever');
       
       ['onClick', 'onClose', 'onWhatever'].forEach(function (event) {
-        expect(obj[event]).toBeAFunction();
+        expect(obj[event]).toBeAnEventifyEvent();
       });
     });
 
-    it('throws an error if a member of the name is already defined', function () {
+    it('throws an error if a member of the name is already defined (but not an event)', function () {
       
       obj.onExisting = 'hello';
 
@@ -40,6 +40,36 @@ describe('eventify.EventsMixin', function () {
 
       }).toThrow('member already defined: onExisting');
     });
+
+    it('does not throw an error if the event is already defined', function () {
+      eventify(obj).define('onWoof');
+
+      expect(function () {
+        eventify(obj).define('onWoof')
+      }).not.toThrow();
+    });
+
+    it('does not redefine an event, but will delcare it as a non-single event', function () {
+      
+      eventify(obj).define('onDropped').single('onInit');
+
+      var listener = jasmine.createSpy('listener');
+      obj.onDropped(listener);
+      
+      var event       = obj.onDropped
+        , singleEvent = obj.onInit;
+
+      obj.events.define('onDropped', 'onInit');
+
+      expect(obj.onDropped).toBe(event);
+      expect(obj.onInit).toBe(singleEvent);
+      expect(obj.onInit.isSingle()).toBe(false);
+
+      obj.onDropped.emit();
+
+      expect(listener).toHaveBeenCalled();
+    });
+
 
     it('returns itself', function () {
       eventify(obj);
@@ -68,6 +98,26 @@ describe('eventify.EventsMixin', function () {
         eventify(obj).single('onExisting');
 
       }).toThrow('member already defined: onExisting');
+    });
+
+    it('does not throw an error if the event is already defined', function () {
+      eventify(obj).single('onInit');
+
+      expect(function () {
+        obj.events.single('onInit')
+      }).not.toThrow();
+    });
+
+    it('does not redefine an event, but will delcare it as a single event', function () {
+      
+      eventify(obj).define('onInit');
+      
+      var singleEvent = obj.onInit;
+
+      obj.events.single('onInit');
+
+      expect(obj.onInit).toBe(singleEvent);
+      expect(obj.onInit.isSingle()).toBe(true);
     });
 
     it('returns itself', function () {
@@ -149,7 +199,7 @@ describe('eventify.EventsMixin', function () {
       eventify(obj).pipe(source);
 
       source.events.names().forEach(function (name) {
-        expect(obj[name].__isEventifyEvent__).toBe(true);
+        expect(obj[name]).toBeAnEventifyEvent();
       });
     });
 
@@ -159,7 +209,7 @@ describe('eventify.EventsMixin', function () {
       eventify(obj).pipe(source, 'onSomeEvent', 'onAnotherEvent');
 
       ['onSomeEvent', 'onAnotherEvent'].forEach(function (name) {
-        expect(obj[name].__isEventifyEvent__).toBe(true);
+        expect(obj[name]).toBeAnEventifyEvent();
       });
     });
 
@@ -182,6 +232,22 @@ describe('eventify.EventsMixin', function () {
       expect(function () {
         eventify(obj).pipe(source, 'onSomeEvent');
       }).toThrow('already defined but not an event: onSomeEvent');
+    });
+
+    it('does not throw an error if the event is already defined on the obj', function () {
+      
+      var obj = {};
+      eventify(obj).define('onSomeEvent');
+
+      expect(function () {
+        eventify(obj).pipe(source, 'onSomeEvent');
+      }).not.toThrow();
+    });
+
+    it('throws an error if an object tries to pipe events from itself', function () {
+      expect(function () {
+        source.events.pipe(source);
+      }).toThrow('an object cannot pipe events from itself');
     });
 
     it('pipes single events on the source as single events on the obj', function () {
@@ -220,6 +286,42 @@ describe('eventify.EventsMixin', function () {
       source.onSomeEvent.emit();
 
       expect(globalListener['own-namespace/onSomeEvent']).toHaveBeenCalled();
+    });
+
+    it('remaps piped events to a different name: onThis:onThat', function () {
+      
+      var source = {}
+        , obj    = {};
+
+      eventify(source).define('onThis');
+      eventify(obj).pipe(source, 'onThis:onThat');
+
+      expect(obj.onThat).toBeAnEventifyEvent();
+
+      var listener = jasmine.createSpy('listener');
+      obj.onThat(listener);
+
+      source.onThis.emit();
+
+      expect(listener).toHaveBeenCalled();
+    });
+
+    it('handles pipe names with more than one colon as non-mappings', function () {
+
+      var source = {}
+        , obj    = {};
+
+      eventify(source).define('on:two:colons');
+      eventify(obj).pipe(source, 'on:two:colons');
+
+      expect(obj['on:two:colons']).toBeAnEventifyEvent();
+
+      var listener = jasmine.createSpy('listener');
+      obj['on:two:colons'](listener);
+
+      source['on:two:colons'].emit();
+
+      expect(listener).toHaveBeenCalled();
     });
   });
 })

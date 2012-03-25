@@ -1,14 +1,26 @@
 eventify.EventMixin = (function () {
   return {
-    mixin: function (args) {
+    __mixin__: function (args) {
+      
       this.__isEventifyEvent__ = true;
       this.__source__          = args.source;
-      this.__single__          = args.single;
       this.__eventName__       = args.eventName;
       this.__hasOccurred__     = false;
       this.__subscriptions__   = new eventify.Subscriptions;
+      
+      this.__setSingle__(args.single);
     }
-  , __listen__: function (listener) {
+  , __setSingle__: function (single) {
+      this.__single__ = !!single;
+    }
+  , __listen__: function (listener, name) {
+
+      if (name) {
+        var context = listener;
+        listener = function () {
+          return context[name].apply(context, arguments);
+        }
+      }
 
       var subs = new eventify.Subscription({
         listener: listener

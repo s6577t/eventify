@@ -1,21 +1,18 @@
-     _____                 _   _  __          _     
-    | ____|_   _____ _ __ | |_(_)/ _|_   _   (_)___ 
-    |  _| \ \ / / _ \ '_ \| __| | |_| | | |  | / __|
-    | |___ \ V /  __/ | | | |_| |  _| |_| |_ | \__ \
-    |_____| \_/ \___|_| |_|\__|_|_|  \__, (_)/ |___/
-                                     |___/ |__/     
+     _____                 _   _  __       
+    | ____|_   _____ _ __ | |_(_)/ _|_   _ 
+    |  _| \ \ / / _ \ '_ \| __| | |_| | | |
+    | |___ \ V /  __/ | | | |_| |  _| |_| |
+    |_____| \_/ \___|_| |_|\__|_|_|  \__, |
+                                     |___/ 
 
 
 
-# event-source
-
-A 3.5k Javascript events library with zero dependencies.
 
 ## Principles
 
 * Event declaration and emission should be clear and explicit
 * Registering event listeners for events that an object does not emit should fail fast
-* Evented programming is essential to javascript; why not have an suitably capable events library
+* Evented programming is essential to javascript; Eventify is a suitably capable events library
 
 ## Declaring Events On An Object
 

@@ -1,7 +1,7 @@
 (function () {
   
   object(eventify).mixin({
-    mixin: function () {
+    __mixin__: function () {
       this.__listeners__ = [];
     }
   , __emit__: function (args) {
