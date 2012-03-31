@@ -10,11 +10,11 @@
 
 ## Principles
 
-* Event declaration and emission should be clear and explicit
-* Registering event listeners for events that an object does not emit should fail fast
 * Evented programming is essential to javascript; Eventify is a suitably capable events library
+* The api for event declaration, emission and listening is consistent, plain and explicit
+* Use first class language constructs instead of strings
 
-## Declaring Events On An Object
+## Eventifying an object
 
     var object = {};
     
@@ -24,43 +24,45 @@
       'onTheOther
     );
 
-* returns object
+`eventify(obj)` is idempotent.
+
 
 ## Emitting An Event
+    
+    this.onSomeEvent.emit(123, 'some text', ['some', 'things']);
+    /* 
+      emitting an that does not exist will fail fast compared to other event systems:
 
-    object.onThat().emit(123, 'some text', ['some', 'things']);
+      this.trigger('an-event', args) // quietly fails. unhelpful.
 
-* arguments are passed on to each listener
-* returns true if the event is emitted. The event may be throttled, or could be a one time event in which case the event will not be emitted (see below).
+    */
 
-This syntax is preferred over the jQuery style `object.onThat(123, 'some text', ['some', 'things']);` because the intent of the statement is explicit.
 
 ## Listening To An Event
 
-Also known as binding.
     
-    object.onThis(function () {
+    var subscription = object.onThis(function () {
       // event handling code here
-      // this === object
+      // this === the source object
       // arguments are those passed when the event was emitted
     });
 
 * returns object
 * event listeners run in the context of object
 
+### Subscriptions
+
+* `subscription.cancel()`
+* `subscription.isActive()`
+* `subscirption.once()` (details below)
+* `subscirption.throttle()` (details below)
+
 ## Throttling An Event
 
-Call listeners no more than once every N milliseconds
-    
-    var intervalBetweenEventEmissionsInMilliseconds = 200;
-    
-    object.onThis().emitInterval(intervalBetweenEventEmissionsInMilliseconds);
+Call a listener no more than once every N milliseconds
+        
+    object.onThis(function () { ... }).throttle(200);
 
-* if no intervalBetweenEventEmissionsInMilliseconds returns the emit interval
-* returns object
-* `object.onThis().emit()` returns false if the event emissions is throttled
-
-To remove the   emitInterval from an event: `object.onThis().  emitInterval(null)`
 
 ### Behaviour
 
@@ -80,60 +82,110 @@ Scenario:
 * `1` is written to the console immediately
 * `1000` is written to the console a second later
 
+TODO: add a timeline here to make it clearer
+
 ## Listening To An Event __Once__
 
 The event listener will only be called the next time the event is emitted.
 
-    object.onThis().once(function () {
+    object.onThis(function () {
       // only gets called on the next event omission
+    }).once();
+
+    // short for object.onThis(function () {...}).nTimes(1);
+
+## Single Events
+
+Some events such as `onInit`, `onLoad`, `onReady` are only ever emitted once.
+
+    eventify(this).single('onInit');
+
+After the first emission all subscriptions are cancelled. Any listeners added after the event has occurred can will be called on the next tick.
+
+check is an event has occurred with `object.onAnEvent.hasOccurred()`
+
+## Events 
+
+Each event has several methods intended to be used internally by the eventified object:
+
+    eventify(this).define('onSomeEvent')
+
+`this.onSomeEvent` now has:
+
+* `eventName([{namespace: true}])`: returns the event name optionally with a namespace(more on namespaces later)
+* `subscriptions()`: an `eventify.Subscriptions` subscription collection on which you can call:
+  * `count()`
+  * `toArray()`
+  * `each(callback)`
+  * `cancelAll()`
+* `emit(...)`: emit the event with any arguments
+* `emitWithArgs(arrayOfArgs)`
+* `emitOnNextTick(...)`
+* `emitWithArgsOnNextTick(arrayOfArgs)`
+* `hasOccurred()`
+* `isSingle()`
+
+## Piping events from another object
+    
+    // pipe all events from some other object
+    eventify(this).pipe(source);
+
+    // or a subset...
+    eventify(this).pipe(source, 'onHighlight', 'onClick');
+
+    // map the events to a different name on this
+    eventify(this).pipe(source, 'onHighlight:onSelect', 'onClick:onPress');
+
+
+## Global event listening
+  
+## namespacing an object
+
+    eventify(this, 'my-namespace').define('onSomeEvent').single('onInit');
+
+## Global listening
+
+    eventify.listen({
+      'my-namespace/onSomeEvent': function (...) {
+        // this is the event source
+      }
+    , 'my-namespace/onInit': function () { ... } 
     });
 
-## One-Time Events
+## Global catch-all
 
-Turns the event into a one-time event which behaves like a normal event until it is emitted, after which new listeners are called **on the next tick of the event machine** (after the current call stack has resolved).
+    eventify.listen(function (event) {
+        /*
+          event looks like: {
+            source: ...
+          , eventName: 'my-namespace/onInit'
+          , args: ... // arguments object
+          }
+        */
+    });
+
+
+## The eventified object
+
+After an object is eventified it has an events member:
+
+  eventify(this);
+
+`this.events` now has:
+
+* `define(...)`
+* `single(...)`
+* `pipe(originator, ...)`
+* `names()`: array of event names
+* `namespace()`: objects global namespace
+* `cancelAllSubscriptions()`: cancels all subscriptions to all events on the object
+
+Further eventification on `this` can be performed like so...
   
-    object.onThis().onTimeEvent();
-    // => object
+  this.events.define('onOtherEvent').single('onTeardown')
     
-    object.onThis(function () {});
-
-    // function will be called when the event is emitted
-    
-    object.onThis().emit();
-    
-    object.onThis(function () {});
-    // will be called immediately with the arguments of the first call
-
-* returns object
-* this operation is idempotent and irreversible
-* `object.onThis().emit()` returns false if the event has already been emitted
-
-
-## Unbinding from and event
-
-    object.onThis().unbind(eventListenerFunction)
-
-* the specified eventListenerFunction will no longer be called
-* returns object
-
-### Unbinding All listeners
-
-    object.onThis().unbindAll()
-
-* no event listeners will be called thereafter
-* returns object
-
-## `eventify.removeAllListeners()`
-
-    eventify.removeAllListeners(object)
-
-* removes all event listeners from all events but leaves the events in place. To remove and event from an object: `delete object.onSomeEvent;`
-* returns object
 
 ## Limitations
 
 * No guarantees are made about the order in which event listeners are called.
 
-## Acknowledgements
-
-Mark Evans

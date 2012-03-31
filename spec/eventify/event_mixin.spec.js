@@ -176,7 +176,7 @@ describe('eventify.EventMixin', function () {
         expect(eventify.__emit__).toHaveBeenCalledWith({
           source: obj
         , args: [1,2,3,4]
-        , event: 'namespace/onSomeEvent'
+        , eventName: 'namespace/onSomeEvent'
         });
       });
 

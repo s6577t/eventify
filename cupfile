@@ -1,6 +1,6 @@
 {
   name: 'eventify',
-  version: '0.8.2',
+  version: '0.8.3',
   licence: 'licence.txt',
 
   javascripts: {

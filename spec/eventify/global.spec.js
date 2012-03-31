@@ -37,7 +37,7 @@ describe('eventify.listen()', function () {
       expect(listener).toHaveBeenCalledWith({
         args: [1,2,3,4],
         source: obj,
-        event: 'namespace/onSomeEvent'
+        eventName: 'namespace/onSomeEvent'
       });
     });
 

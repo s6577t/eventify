@@ -71,7 +71,7 @@ eventify.EventMixin = (function () {
         eventify.__emit__({
           source: source
         , args: arguments
-        , event: thou.eventName({namespace: true})
+        , eventName: thou.eventName({namespace: true})
         });
       }
 
