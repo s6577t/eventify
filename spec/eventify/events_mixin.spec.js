@@ -323,5 +323,27 @@ describe('eventify.EventsMixin', function () {
 
       expect(listener).toHaveBeenCalled();
     });
+
+    it('returns a Subscriptions object which can be used to cancel all subscriptions', function () {
+      
+      var origin   = {}
+        , obj      = {}
+        , listener = jasmine.createSpy('listener');
+
+      eventify(origin).define('onClick', 'onMove');
+      eventify(obj);
+      
+      var subscriptions = obj.events.pipe(origin, 'onClick:onOpen', 'onMove');
+
+      obj.onOpen(listener);
+      obj.onMove(listener);
+
+      subscriptions.cancelAll();
+
+      origin.onClick.emit();
+      origin.onMove.emit();
+
+      expect(listener).not.toHaveBeenCalled();
+    });
   });
 })

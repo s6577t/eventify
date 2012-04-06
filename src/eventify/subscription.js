@@ -99,6 +99,7 @@ eventify.Subscription = (function () {
       return false;
     }
   , isActive: function () {
+      
       return this.__active__;
     }
   , throttle: function (callInterval) {
@@ -107,6 +108,7 @@ eventify.Subscription = (function () {
       return this;
     }
   , once: function () {
+      
       return this.nTimes(1)
     }
   , nTimes: function (n) {

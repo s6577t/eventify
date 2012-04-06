@@ -1,6 +1,6 @@
 eventify.Subscriptions = (function () {
 
-  function Subscriptions (event) {
+  function Subscriptions () {
     this.__subscriptions__ = {};
   }
 
@@ -10,11 +10,6 @@ eventify.Subscriptions = (function () {
     }
   , __remove__: function (subscription) {
       delete this.__subscriptions__[subscription.__id__];
-    }
-  , __invokeAllNow__: function (source, args) {
-      this.each(function (subscription) {
-        subscription.__invokeNow__(source, args);
-      });
     }
   , cancelAll: function () {
       this.each(function (subs) {

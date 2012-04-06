@@ -65,6 +65,8 @@ eventify.EventsMixin = (function () {
         names = originator.events.names();
       }
 
+      var subscriptions = new eventify.Subscriptions;
+
       names.forEach(function (name) {
 
         var originatorEvent = name
@@ -98,10 +100,14 @@ eventify.EventsMixin = (function () {
           }
         }        
         
-        originator[originatorEvent](function () {
+        var subscription = originator[originatorEvent](function () {
           propagator[propagatorEvent].emit.apply(propagator[propagatorEvent], arguments);
         });
+
+        subscriptions.__add__(subscription);
       });
+      
+      return subscriptions;
     }
   , names: function () {
 

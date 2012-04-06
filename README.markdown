@@ -137,11 +137,25 @@ Each event has several methods intended to be used internally by the eventified 
     eventify(this).pipe(source, 'onHighlight:onSelect', 'onClick:onPress');
 
 
+    /*
+      unlike define() and single() which return this.events, pipe() returns a collection of subscriptions to the source events which can be cancelled by calling subscriptions.cancelAll()...
+    */
+
+    eventify(this).define(...);
+
+    var subscriptions = this.events.pipe(source, 'onClick:onOpen');
+
+    /*
+      calling subscriptions.cancelAll() results in the event emissions from source.onClick no longer being piped to this.onOpen
+    */
+
 ## Global event listening
   
 ## namespacing an object
 
     eventify(this, 'my-namespace').define('onSomeEvent').single('onInit');
+
+This gives you a way to listen to a 'class' of events.
 
 ## Global listening
 
@@ -151,6 +165,8 @@ Each event has several methods intended to be used internally by the eventified 
       }
     , 'my-namespace/onInit': function () { ... } 
     });
+
+This is how you can listen to the class of event `my-namesapce/onSomeEvent` from any object
 
 ## Global catch-all
 

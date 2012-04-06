@@ -94,7 +94,8 @@
   , emit: function () {
     
       var thou   = this
-        , source = this.__source__;
+        , source = this.__source__
+        , args   = arguments;
 
       if (thou.isSingle()) {
         if (thou.hasOccurred()) {
@@ -105,7 +106,9 @@
 
       thou.__hasOccurred__ = true;
 
-      thou.subscriptions().__invokeAllNow__(source, arguments);
+      thou.subscriptions().each(function (subscription) {
+        subscription.__invokeNow__(source, args);
+      });
       
       if (source.events.namespace()) {
         eventify.__emit__({
@@ -211,6 +214,8 @@
         names = originator.events.names();
       }
 
+      var subscriptions = new eventify.Subscriptions;
+
       names.forEach(function (name) {
 
         var originatorEvent = name
@@ -244,10 +249,14 @@
           }
         }        
         
-        originator[originatorEvent](function () {
+        var subscription = originator[originatorEvent](function () {
           propagator[propagatorEvent].emit.apply(propagator[propagatorEvent], arguments);
         });
+
+        subscriptions.__add__(subscription);
       });
+      
+      return subscriptions;
     }
   , names: function () {
 
@@ -415,6 +424,7 @@
       return false;
     }
   , isActive: function () {
+      
       return this.__active__;
     }
   , throttle: function (callInterval) {
@@ -423,6 +433,7 @@
       return this;
     }
   , once: function () {
+      
       return this.nTimes(1)
     }
   , nTimes: function (n) {
@@ -449,7 +460,7 @@
   return Subscription;
 })();;eventify.Subscriptions = (function () {
 
-  function Subscriptions (event) {
+  function Subscriptions () {
     this.__subscriptions__ = {};
   }
 
@@ -459,11 +470,6 @@
     }
   , __remove__: function (subscription) {
       delete this.__subscriptions__[subscription.__id__];
-    }
-  , __invokeAllNow__: function (source, args) {
-      this.each(function (subscription) {
-        subscription.__invokeNow__(source, args);
-      });
     }
   , cancelAll: function () {
       this.each(function (subs) {

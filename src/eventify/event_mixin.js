@@ -54,7 +54,8 @@ eventify.EventMixin = (function () {
   , emit: function () {
     
       var thou   = this
-        , source = this.__source__;
+        , source = this.__source__
+        , args   = arguments;
 
       if (thou.isSingle()) {
         if (thou.hasOccurred()) {
@@ -65,7 +66,9 @@ eventify.EventMixin = (function () {
 
       thou.__hasOccurred__ = true;
 
-      thou.subscriptions().__invokeAllNow__(source, arguments);
+      thou.subscriptions().each(function (subscription) {
+        subscription.__invokeNow__(source, args);
+      });
       
       if (source.events.namespace()) {
         eventify.__emit__({
